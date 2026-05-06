@@ -1,8 +1,14 @@
 <header class="erp-topbar">
-    <form class="erp-global-search" role="search">
-        <i class="bi bi-search"></i>
-        <input class="form-control" type="search" placeholder="Search or type a command">
-    </form>
+    <div class="erp-topbar-start">
+        <button class="erp-icon-btn erp-topbar-sidebar-toggle js-sidebar-toggle" type="button" aria-controls="erpSidebar" aria-expanded="false" title="Toggle sidebar">
+            <i class="bi bi-list"></i>
+        </button>
+
+        <form class="erp-global-search" role="search">
+            <i class="bi bi-search"></i>
+            <input class="form-control" type="search" placeholder="Search or type a command">
+        </form>
+    </div>
 
     <div class="erp-topbar-tools">
         <button class="erp-icon-btn" type="button" title="Create">

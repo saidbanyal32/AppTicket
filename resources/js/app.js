@@ -32,6 +32,42 @@ const parseJson = (value, fallback = []) => {
     }
 };
 
+const SIDEBAR_STORAGE_KEY = "erp.sidebar.open";
+
+const setSidebarState = (isOpen) => {
+    document.body.classList.toggle("erp-sidebar-open", isOpen);
+
+    $(".js-sidebar-toggle").attr("aria-expanded", String(isOpen));
+    $(".erp-sidebar-toggle-icon")
+        .toggleClass("bi-list", !isOpen)
+        .toggleClass("bi-chevron-left", isOpen);
+
+    try {
+        window.localStorage.setItem(SIDEBAR_STORAGE_KEY, isOpen ? "1" : "0");
+    } catch (error) {
+        // Sidebar state is a convenience only; ignore storage restrictions.
+    }
+
+    window.dispatchEvent(new Event("resize"));
+
+    window.setTimeout(() => {
+        if ($.fn.dataTable) {
+            $.fn.dataTable
+                .tables({ visible: true, api: true })
+                .columns.adjust()
+                .responsive.recalc();
+        }
+    }, 220);
+};
+
+const getStoredSidebarState = () => {
+    try {
+        return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "1";
+    } catch (error) {
+        return false;
+    }
+};
+
 window.ErpDataTable = {
     init(table) {
         const $table = $(table);
@@ -74,7 +110,7 @@ window.ErpDataTable = {
                 [10, 25, 50, 100],
                 [10, 25, 50, 100],
             ],
-            dom: "<'erp-datatable-actions'B>rt<'row align-items-center erp-datatable-footer'<'col-sm-4'l><'col-sm-4'i><'col-sm-4'p>>",
+            dom: "<'erp-datatable-actions'B>rt<'erp-datatable-footer'<'erp-datatable-summary'li><'erp-datatable-pagination'p>>",
             buttons: [
                 { extend: "excelHtml5", text: '<i class="bi bi-file-earmark-excel me-1"></i>Excel', className: "btn btn-sm btn-primary text-white" },
                 { extend: "csvHtml5", text: '<i class="bi bi-filetype-csv me-1"></i>CSV', className: "btn btn-sm btn-primary text-white" },
@@ -144,13 +180,35 @@ window.ErpDataTable = {
 };
 
 $(function () {
+    setSidebarState(getStoredSidebarState());
+
     window.ErpDataTable.initAll();
 
     $(".js-select2").select2({
         width: "100%",
     });
 
-    $(".erp-nav-link[data-bs-toggle='collapse']").on("click", function () {
-        $(this).find(".erp-nav-chevron").toggleClass("bi-chevron-right bi-chevron-down");
+    $(".js-sidebar-toggle").on("click", function () {
+        setSidebarState(!document.body.classList.contains("erp-sidebar-open"));
+    });
+
+    $(".erp-nav .collapse")
+        .on("show.bs.collapse", function () {
+            $(`[aria-controls="${this.id}"]`)
+                .find(".erp-nav-chevron")
+                .removeClass("bi-chevron-right")
+                .addClass("bi-chevron-down");
+        })
+        .on("hide.bs.collapse", function () {
+            $(`[aria-controls="${this.id}"]`)
+                .find(".erp-nav-chevron")
+                .removeClass("bi-chevron-down")
+                .addClass("bi-chevron-right");
+        });
+
+    $(document).on("keydown", function (event) {
+        if (event.key === "Escape" && document.body.classList.contains("erp-sidebar-open")) {
+            setSidebarState(false);
+        }
     });
 });

@@ -19,12 +19,27 @@
                     'active' => request()->routeIs($item['route'].'.*'),
                 ])->values()->all(),
             ];
-        })->values()->all();
+        });
+
+    $sidebarSections = [
+        [
+            'title' => 'Data Master',
+            'groups' => ['Master Organisasi', 'Item / Material', 'Project', 'Vendor'],
+        ],
+        [
+            'title' => 'Pengaturan Users & Akses',
+            'groups' => ['Users & Akses'],
+            'labels' => ['Users & Akses' => 'Users / Akses'],
+        ],
+    ];
 @endphp
 
-<aside class="erp-sidebar" aria-label="ERP navigation">
+<aside class="erp-sidebar" aria-label="ERP navigation" id="erpSidebar">
     <div class="erp-sidebar-logo">
-        <span class="erp-logo-mark">ZE</span>
+        <button class="erp-logo-toggle js-sidebar-toggle" type="button" aria-controls="erpSidebar" aria-expanded="false" title="Toggle sidebar">
+            <span class="erp-logo-mark">ZE</span>
+            <i class="bi bi-list erp-sidebar-toggle-icon" aria-hidden="true"></i>
+        </button>
         <span class="erp-logo-text">
             <span class="erp-logo-title">APP Ticketing System</span>
             <span class="erp-logo-subtitle">Enterprise Workspace</span>
@@ -32,27 +47,38 @@
     </div>
 
     <nav class="erp-nav">
-        <div class="erp-nav-section">Modules</div>
+        @foreach ($sidebarSections as $sectionIndex => $section)
+            <div class="erp-nav-group {{ $sectionIndex > 0 ? 'has-gap' : '' }}">
+                <div class="erp-nav-section">{{ $section['title'] }}</div>
 
-        @foreach ($modules as $index => $module)
-            <a class="erp-nav-link {{ !empty($module['active']) ? 'active' : '' }}"
-               data-bs-toggle="collapse"
-               href="#erpNav{{ $index }}"
-               role="button"
-               aria-expanded="{{ !empty($module['active']) ? 'true' : 'false' }}"
-               aria-controls="erpNav{{ $index }}"
-               title="{{ $module['label'] }}">
-                <i class="bi {{ $module['icon'] }}"></i>
-                <span class="erp-nav-label">{{ $module['label'] }}</span>
-                <i class="bi {{ !empty($module['active']) ? 'bi-chevron-down' : 'bi-chevron-right' }} erp-nav-chevron"></i>
-            </a>
-            <div class="collapse {{ !empty($module['active']) ? 'show' : '' }}" id="erpNav{{ $index }}">
-                <div class="erp-subnav">
-                    @foreach ($module['children'] as $child)
-                        <a class="{{ !empty($child['active']) ? 'active' : '' }}" href="{{ $child['url'] }}">{{ $child['label'] }}</a>
-                    @endforeach
+                @foreach ($section['groups'] as $group)
+                    @php
+                        $module = $modules->get($group);
+                        $moduleLabel = $section['labels'][$group] ?? $group;
+                    @endphp
+
+                    @continue(empty($module))
+
+                    <a class="erp-nav-link {{ !empty($module['active']) ? 'active' : '' }}"
+                       data-bs-toggle="collapse"
+                       href="#erpNav{{ $sectionIndex }}{{ $loop->index }}"
+                       role="button"
+                       aria-expanded="{{ !empty($module['active']) ? 'true' : 'false' }}"
+                       aria-controls="erpNav{{ $sectionIndex }}{{ $loop->index }}"
+                       title="{{ $moduleLabel }}">
+                        <i class="bi {{ $module['icon'] }}"></i>
+                        <span class="erp-nav-label">{{ $moduleLabel }}</span>
+                        <i class="bi {{ !empty($module['active']) ? 'bi-chevron-down' : 'bi-chevron-right' }} erp-nav-chevron"></i>
+                    </a>
+                    <div class="collapse {{ !empty($module['active']) ? 'show' : '' }}" id="erpNav{{ $sectionIndex }}{{ $loop->index }}">
+                        <div class="erp-subnav">
+                            @foreach ($module['children'] as $child)
+                                <a class="{{ !empty($child['active']) ? 'active' : '' }}" href="{{ $child['url'] }}">{{ $child['label'] }}</a>
+                            @endforeach
+                        </div>
+                    </div>
+                @endforeach
                 </div>
-            </div>
         @endforeach
     </nav>
 </aside>

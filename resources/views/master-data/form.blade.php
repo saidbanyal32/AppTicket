@@ -3,6 +3,7 @@
 @php
     $isEdit = $mode === 'edit';
     $actions = '<a class="btn btn-sm btn-outline-secondary" href="'.route($config['route'].'.index').'"><i class="bi bi-arrow-left me-1"></i>Back</a>';
+    $hasFileField = collect($config['fields'])->contains(fn ($field) => ($field['type'] ?? null) === 'file');
 @endphp
 
 @section('content')
@@ -11,7 +12,7 @@
             <h2 class="erp-panel-title">{{ $isEdit ? 'Edit' : 'Create' }} {{ $config['title'] }}</h2>
         </div>
         <div class="erp-panel-body">
-            <form method="POST" action="{{ $isEdit ? route($config['route'].'.update', $record) : route($config['route'].'.store') }}">
+            <form method="POST" action="{{ $isEdit ? route($config['route'].'.update', $record) : route($config['route'].'.store') }}" @if ($hasFileField) enctype="multipart/form-data" @endif>
                 @csrf
                 @if ($isEdit)
                     @method('PUT')
@@ -25,6 +26,10 @@
                             $value = $type === 'password' ? old($name, '') : old($name, data_get($record, $name));
                             $inputId = 'field_'.$name;
                             $span = ($field['span'] ?? 1) > 1 ? 'col-span' : '';
+
+                            if ($value instanceof \Illuminate\Support\Carbon && $type === 'datetime-local') {
+                                $value = $value->format('Y-m-d\TH:i');
+                            }
                         @endphp
                         <div class="{{ $span }}">
                             @if ($type === 'boolean')
@@ -53,6 +58,14 @@
                                             <option value="{{ $optionValue }}" @selected((string) $value === (string) $optionValue)>{{ $optionLabel }}</option>
                                         @endforeach
                                     </select>
+                                @elseif ($type === 'file')
+                                    <input class="form-control @error($name) is-invalid @enderror" id="{{ $inputId }}" type="file" name="{{ $name }}" accept="{{ $field['accept'] ?? null }}">
+                                    @if ($record->exists && filled(data_get($record, $name)))
+                                        @php($fileUrl = \Illuminate\Support\Facades\Storage::disk($field['disk'] ?? 'public')->url(data_get($record, $name)))
+                                        <div class="mt-2">
+                                            <img src="{{ $fileUrl }}" alt="{{ $field['label'] }}" class="rounded object-fit-cover border" style="width: 72px; height: 72px;">
+                                        </div>
+                                    @endif
                                 @else
                                     <input class="form-control @error($name) is-invalid @enderror" id="{{ $inputId }}" type="{{ $type }}" name="{{ $name }}" value="{{ $value }}" step="{{ $field['step'] ?? null }}">
                                 @endif

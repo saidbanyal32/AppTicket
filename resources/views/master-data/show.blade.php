@@ -25,7 +25,7 @@
                         $span = ($field['span'] ?? 1) > 1 ? 'col-span' : '';
 
                         if ($value instanceof \Illuminate\Support\Carbon) {
-                            $value = $value->format('Y-m-d');
+                            $value = $type === 'datetime-local' ? $value->format('Y-m-d H:i') : $value->format('Y-m-d');
                         }
                     @endphp
                     <div class="{{ $span }}">
@@ -66,6 +66,15 @@
                                         <option value="{{ $value }}" selected>{{ $value }}</option>
                                     @endif
                                 </select>
+                            @elseif ($type === 'file')
+                                @if (filled($value))
+                                    @php($fileUrl = \Illuminate\Support\Facades\Storage::disk($field['disk'] ?? 'public')->url($value))
+                                    <div>
+                                        <img src="{{ $fileUrl }}" alt="{{ $field['label'] }}" class="rounded object-fit-cover border" style="width: 96px; height: 96px;">
+                                    </div>
+                                @else
+                                    <input class="form-control erp-readonly-control" id="{{ $inputId }}" type="text" value="-" readonly>
+                                @endif
                             @else
                                 <input class="form-control erp-readonly-control" id="{{ $inputId }}" type="text" value="{{ filled($value) ? $value : '-' }}" readonly>
                             @endif

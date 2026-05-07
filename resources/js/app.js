@@ -7,13 +7,17 @@ import "datatables.net-buttons-bs5";
 import "datatables.net-buttons/js/buttons.html5.mjs";
 import "datatables.net-buttons/js/buttons.print.mjs";
 import JSZip from "jszip";
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
 import select2Factory from "select2";
 
 window.$ = window.jQuery = $;
 window.JSZip = JSZip;
+pdfMake.vfs = pdfFonts;
 
 if (DataTable.Buttons) {
     DataTable.Buttons.jszip(JSZip);
+    DataTable.Buttons.pdfMake(pdfMake);
 }
 
 if (!$.fn.select2 && typeof select2Factory === "function") {
@@ -113,6 +117,7 @@ window.ErpDataTable = {
             dom: "<'erp-datatable-actions'B>rt<'erp-datatable-footer'<'erp-datatable-summary'li><'erp-datatable-pagination'p>>",
             buttons: [
                 { extend: "excelHtml5", text: '<i class="bi bi-file-earmark-excel me-1"></i>Excel', className: "btn btn-sm btn-primary text-white" },
+                { extend: "pdfHtml5", text: '<i class="bi bi-file-earmark-pdf me-1"></i>PDF', className: "btn btn-sm btn-primary text-white", orientation: "landscape", pageSize: "A4" },
                 { extend: "csvHtml5", text: '<i class="bi bi-filetype-csv me-1"></i>CSV', className: "btn btn-sm btn-primary text-white" },
                 { extend: "print", text: '<i class="bi bi-printer me-1"></i>Print', className: "btn btn-sm btn-primary text-white" },
                 { extend: "copyHtml5", text: '<i class="bi bi-copy me-1"></i>Copy', className: "btn btn-sm btn-primary text-white" },

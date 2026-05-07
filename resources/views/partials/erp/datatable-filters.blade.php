@@ -18,9 +18,15 @@
     @foreach ($filterFields as $filter)
         <select class="form-select js-datatable-filter" name="{{ $filter['key'] }}" aria-label="{{ $filter['label'] }} filter">
             <option value="">{{ $filter['label'] }}</option>
-            @foreach ($options[$filter['relation']] ?? [] as $option)
-                <option value="{{ $option['id'] }}">{{ $option['label'] }}</option>
-            @endforeach
+            @if (! empty($filter['relation']))
+                @foreach ($options[$filter['relation']] ?? [] as $option)
+                    <option value="{{ $option['id'] }}">{{ $option['label'] }}</option>
+                @endforeach
+            @else
+                @foreach ($filter['options'] ?? [] as $optionValue => $optionLabel)
+                    <option value="{{ $optionValue }}">{{ $optionLabel }}</option>
+                @endforeach
+            @endif
         </select>
     @endforeach
 

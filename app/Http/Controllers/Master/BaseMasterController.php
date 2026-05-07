@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\View as ViewFactory;
 use Illuminate\View\View;
 
@@ -65,7 +66,7 @@ abstract class BaseMasterController extends Controller
     public function store(MasterDataRequest $request): RedirectResponse
     {
         $record = $this->newModel();
-        $record->fill($request->validated());
+        $record->fill($this->validatedData($request));
         $record->save();
 
         return redirect()->route($this->config('route').'.show', $record)
@@ -98,7 +99,7 @@ abstract class BaseMasterController extends Controller
     public function update(MasterDataRequest $request, mixed $record): RedirectResponse
     {
         $record = $this->findRecord($record);
-        $record->fill($request->validated());
+        $record->fill($this->validatedData($request, $record));
         $record->save();
 
         return redirect()->route($this->config('route').'.show', $record)
@@ -202,11 +203,12 @@ abstract class BaseMasterController extends Controller
     protected function filterFields(): array
     {
         return collect($this->config('fields'))
-            ->filter(fn (array $field) => ($field['type'] ?? null) === 'select' && ! empty($field['relation']))
+            ->filter(fn (array $field) => (($field['type'] ?? null) === 'select' && ! empty($field['relation'])) || (($field['filter'] ?? false) && ($field['type'] ?? null) === 'select_static'))
             ->map(fn (array $field, string $key) => [
                 'key' => $key,
                 'label' => $field['label'],
-                'relation' => $field['relation'],
+                'relation' => $field['relation'] ?? null,
+                'options' => $field['options'] ?? null,
             ])
             ->values()
             ->all();
@@ -336,6 +338,16 @@ abstract class BaseMasterController extends Controller
 
     protected function formatDatatableValue(Model $record, array $column, mixed $value): string
     {
+        if (($column['type'] ?? null) === 'image') {
+            if (blank($value)) {
+                return '-';
+            }
+
+            $url = Storage::disk($column['disk'] ?? 'public')->url($value);
+
+            return '<img src="'.e($url).'" alt="" class="rounded-circle object-fit-cover" style="width: 34px; height: 34px;">';
+        }
+
         if (($column['type'] ?? null) === 'status') {
             $label = $value ? 'Active' : 'Inactive';
             $class = $value ? 'success' : 'danger';
@@ -344,10 +356,39 @@ abstract class BaseMasterController extends Controller
         }
 
         if ($value instanceof Carbon) {
-            return e($value->format('Y-m-d'));
+            $format = ($column['type'] ?? null) === 'datetime' ? 'Y-m-d H:i' : 'Y-m-d';
+
+            return e($value->format($format));
         }
 
         return filled($value) ? e((string) $value) : '-';
+    }
+
+    protected function validatedData(MasterDataRequest $request, ?Model $record = null): array
+    {
+        $data = $request->validated();
+
+        foreach ($this->config('fields') as $name => $field) {
+            if (($field['type'] ?? null) !== 'file') {
+                continue;
+            }
+
+            if (! $request->hasFile($name)) {
+                unset($data[$name]);
+
+                continue;
+            }
+
+            $disk = $field['disk'] ?? 'public';
+
+            if ($record && filled($record->{$name})) {
+                Storage::disk($disk)->delete($record->{$name});
+            }
+
+            $data[$name] = $request->file($name)->store($field['path'] ?? $this->resourceKey, $disk);
+        }
+
+        return $data;
     }
 
     protected function hasConfiguredColumn(string $key): bool

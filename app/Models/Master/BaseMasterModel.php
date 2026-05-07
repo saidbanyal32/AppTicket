@@ -18,6 +18,7 @@ abstract class BaseMasterModel extends Model
             'is_active' => 'boolean',
             'start_date' => 'date',
             'end_date' => 'date',
+            'last_login' => 'datetime',
             'minimum_stock' => 'decimal:4',
             'contract_value' => 'decimal:2',
         ];

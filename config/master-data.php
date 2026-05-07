@@ -7,6 +7,8 @@ use App\Models\Master\RefItemUnit;
 use App\Models\Master\RefJabatan;
 use App\Models\Master\RefProject;
 use App\Models\Master\RefProjectSite;
+use App\Models\Master\RefTicketCategory;
+use App\Models\Master\RefTicketSla;
 use App\Models\Master\RefUnit;
 use App\Models\Master\RefVendor;
 use App\Models\Master\RefVendorType;
@@ -56,14 +58,17 @@ return [
         'icon' => 'bi-person-vcard',
         'model' => RefJabatan::class,
         'route' => 'master.jabatan',
+        'with' => ['unit'],
         'display' => 'name',
         'columns' => [
             ['key' => 'code', 'label' => 'Code'],
             ['key' => 'name', 'label' => 'Name'],
+            ['key' => 'unit.name', 'label' => 'Unit'],
             ['key' => 'level', 'label' => 'Level'],
             ['key' => 'is_active', 'label' => 'Status', 'type' => 'status'],
         ],
         'fields' => [
+            'unit_id' => ['type' => 'select', 'label' => 'Unit', 'relation' => 'units', 'nullable' => true],
             'code' => ['type' => 'text', 'label' => 'Code'],
             'name' => ['type' => 'text', 'label' => 'Name', 'span' => 2],
             'level' => ['type' => 'number', 'label' => 'Level'],
@@ -71,6 +76,7 @@ return [
             'is_active' => $active,
         ],
         'rules' => [
+            'unit_id' => ['nullable', 'exists:ref_units,id'],
             'code' => ['required', 'string', 'max:50', 'unique:ref_jabatan,code,{id}'],
             'name' => ['required', 'string', 'max:150'],
             'level' => ['required', 'integer', 'min:1'],
@@ -115,6 +121,7 @@ return [
             'username' => ['required', 'string', 'max:80', 'unique:sys_users,username,{id}'],
             'password' => ['required_on_create', 'nullable', 'string', 'min:8'],
             'phone' => ['nullable', 'string', 'max:50'],
+            'photo' => ['nullable', 'image', 'max:2048'],
             'is_active' => ['nullable', 'boolean'],
         ],
     ],
@@ -154,6 +161,76 @@ return [
         'columns' => [['key' => 'role.name', 'label' => 'Role'], ['key' => 'permission.module', 'label' => 'Module'], ['key' => 'permission.name', 'label' => 'Permission']],
         'fields' => ['role_id' => ['type' => 'select', 'label' => 'Role', 'relation' => 'roles'], 'permission_id' => ['type' => 'select', 'label' => 'Permission', 'relation' => 'permissions']],
         'rules' => ['role_id' => ['required', 'exists:sys_roles,id'], 'permission_id' => ['required', 'exists:sys_permissions,id']],
+    ],
+    'ticket-categories' => [
+        'title' => 'Ticket Categories',
+        'subtitle' => 'Kategori tiket, hirarki parent-child, warna, icon, dan SLA default',
+        'group' => 'Master Ticketing',
+        'icon' => 'bi-ticket-perforated',
+        'model' => RefTicketCategory::class,
+        'route' => 'master-ticketing.categories',
+        'with' => ['parent', 'sla'],
+        'display' => 'name',
+        'columns' => [
+            ['key' => 'code', 'label' => 'Code'],
+            ['key' => 'name', 'label' => 'Name'],
+            ['key' => 'parent.name', 'label' => 'Parent'],
+            ['key' => 'sla.name', 'label' => 'SLA'],
+            ['key' => 'sort_no', 'label' => 'Sort No'],
+            ['key' => 'is_active', 'label' => 'Status', 'type' => 'status'],
+        ],
+        'fields' => [
+            'parent_id' => ['type' => 'select', 'label' => 'Parent Category', 'relation' => 'ticket-categories', 'nullable' => true],
+            'sla_id' => ['type' => 'select', 'label' => 'Ticket SLA', 'relation' => 'ticket-slas', 'nullable' => true],
+            'code' => ['type' => 'text', 'label' => 'Code'],
+            'name' => ['type' => 'text', 'label' => 'Name', 'span' => 2],
+            'color' => ['type' => 'color', 'label' => 'Color'],
+            'icon' => ['type' => 'text', 'label' => 'Icon'],
+            'sort_no' => ['type' => 'number', 'label' => 'Sort No'],
+            'is_active' => $active,
+        ],
+        'rules' => [
+            'parent_id' => ['nullable', 'exists:ref_ticket_categories,id'],
+            'sla_id' => ['nullable', 'exists:ref_ticket_slas,id'],
+            'code' => ['required', 'string', 'max:50', 'unique:ref_ticket_categories,code,{id}'],
+            'name' => ['required', 'string', 'max:150'],
+            'color' => ['nullable', 'string', 'max:30'],
+            'icon' => ['nullable', 'string', 'max:80'],
+            'sort_no' => ['nullable', 'numeric'],
+            'is_active' => ['nullable', 'boolean'],
+        ],
+    ],
+    'ticket-slas' => [
+        'title' => 'Ticket SLA',
+        'subtitle' => 'Target response, resolve, dan eskalasi berdasarkan priority',
+        'group' => 'Master Ticketing',
+        'icon' => 'bi-stopwatch',
+        'model' => RefTicketSla::class,
+        'route' => 'master-ticketing.slas',
+        'display' => 'name',
+        'columns' => [
+            ['key' => 'name', 'label' => 'Name'],
+            ['key' => 'priority', 'label' => 'Priority'],
+            ['key' => 'response_minutes', 'label' => 'Response (Minutes)'],
+            ['key' => 'resolve_minutes', 'label' => 'Resolve (Minutes)'],
+            ['key' => 'escalation_minutes', 'label' => 'Escalation (Minutes)'],
+        ],
+        'fields' => [
+            'name' => ['type' => 'text', 'label' => 'Name', 'span' => 2],
+            'priority' => ['type' => 'select_static', 'label' => 'Priority', 'filter' => true, 'options' => ['low' => 'Low', 'medium' => 'Medium', 'high' => 'High', 'critical' => 'Critical']],
+            'response_minutes' => ['type' => 'number', 'label' => 'Response Minutes'],
+            'resolve_minutes' => ['type' => 'number', 'label' => 'Resolve Minutes'],
+            'escalation_minutes' => ['type' => 'number', 'label' => 'Escalation Minutes'],
+            'description' => $description,
+        ],
+        'rules' => [
+            'name' => ['required', 'string', 'max:150'],
+            'priority' => ['required', 'string', 'max:50'],
+            'response_minutes' => ['required', 'numeric', 'min:0'],
+            'resolve_minutes' => ['required', 'numeric', 'min:0'],
+            'escalation_minutes' => ['nullable', 'numeric', 'min:0'],
+            'description' => ['nullable', 'string'],
+        ],
     ],
     'item-categories' => [
         'title' => 'Item Categories',

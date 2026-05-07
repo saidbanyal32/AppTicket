@@ -595,6 +595,128 @@ textarea.form-control {
     overflow: auto;
 }
 
+.erp-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(120px, 1fr));
+    gap: 8px;
+}
+
+.erp-summary-card {
+    padding: 10px;
+}
+
+.erp-summary-card strong {
+    display: block;
+    margin-top: 4px;
+    font-size: 20px;
+    line-height: 1;
+}
+
+.erp-ticket-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 12px;
+    align-items: start;
+}
+
+.erp-ticket-message {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.erp-ticket-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #e9f2ff;
+    color: #164f82;
+    font-weight: 700;
+}
+
+.erp-ticket-bubble {
+    padding: 9px 10px;
+    border: 1px solid var(--erp-border-soft);
+    border-radius: 6px;
+    background: #fbfcfd;
+}
+
+.erp-attachment {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 100%;
+    margin: 2px 4px 2px 0;
+    padding: 3px 7px;
+    border: 1px solid var(--erp-border);
+    border-radius: 4px;
+    background: #fff;
+    color: #354253;
+}
+
+.erp-info-list {
+    display: grid;
+    gap: 7px;
+}
+
+.erp-info-list div {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    border-bottom: 1px solid var(--erp-border-soft);
+    padding-bottom: 6px;
+}
+
+.erp-info-list span,
+.erp-timeline-item span,
+.erp-notification-row span {
+    color: var(--erp-muted);
+}
+
+.erp-timeline {
+    display: grid;
+    gap: 8px;
+}
+
+.erp-timeline-item {
+    padding-left: 10px;
+    border-left: 2px solid #bad0e4;
+}
+
+.erp-timeline-item p,
+.erp-notification-row p {
+    margin: 2px 0 0;
+}
+
+.erp-notification-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px;
+    border-bottom: 1px solid var(--erp-border-soft);
+}
+
+.erp-notification-row.unread {
+    background: #f2f7fd;
+}
+
+.erp-notification-menu {
+    width: 310px;
+    font-size: 12px;
+}
+
+@media (max-width: 992px) {
+    .erp-summary-grid,
+    .erp-ticket-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
 .table {
     margin-bottom: 0;
     color: var(--erp-text);

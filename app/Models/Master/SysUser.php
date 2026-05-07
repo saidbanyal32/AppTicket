@@ -21,6 +21,7 @@ class SysUser extends Authenticatable
     {
         return [
             'is_active' => 'boolean',
+            'last_login' => 'datetime',
             'password' => 'hashed',
         ];
     }

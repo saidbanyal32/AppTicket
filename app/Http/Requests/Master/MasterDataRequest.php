@@ -16,7 +16,7 @@ class MasterDataRequest extends FormRequest
     {
         $config = $this->config();
         $model = $this->route()?->parameter($this->route()?->parameterNames()[0] ?? '') ?? null;
-        $id = is_object($model) ? $model->getKey() : null;
+        $id = is_object($model) ? $model->getKey() : $model;
         $rules = [];
 
         foreach (($config['rules'] ?? []) as $field => $fieldRules) {

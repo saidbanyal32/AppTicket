@@ -10,6 +10,7 @@
                     'Item / Material' => 'bi-box-seam',
                     'Project' => 'bi-building',
                     'Vendor' => 'bi-truck',
+                    'Master Ticketing' => 'bi-ticket-perforated',
                     default => 'bi-grid-1x2',
                 },
                 'active' => $items->contains(fn ($item) => request()->routeIs($item['route'].'.*')),
@@ -23,8 +24,40 @@
 
     $sidebarSections = [
         [
+            'title' => 'Transaction',
+            'custom' => [
+                [
+                    'label' => 'Tickets',
+                    'icon' => 'bi-ticket-detailed',
+                    'url' => route('tickets.index'),
+                    'active' => request()->routeIs('tickets.*'),
+                ],
+            ],
+        ],
+        [
             'title' => 'Data Master',
             'groups' => ['Master Organisasi', 'Item / Material', 'Project', 'Vendor'],
+        ],
+        [
+            'title' => 'Master Ticketing',
+            'groups' => ['Master Ticketing'],
+        ],
+        [
+            'title' => 'System',
+            'custom' => [
+                [
+                    'label' => 'Notifications',
+                    'icon' => 'bi-bell',
+                    'url' => route('notifications.index'),
+                    'active' => request()->routeIs('notifications.*'),
+                ],
+                [
+                    'label' => 'Settings',
+                    'icon' => 'bi-gear',
+                    'url' => route('settings.index'),
+                    'active' => request()->routeIs('settings.*'),
+                ],
+            ],
         ],
         [
             'title' => 'Pengaturan Users & Akses',
@@ -41,8 +74,8 @@
             <i class="bi bi-list erp-sidebar-toggle-icon" aria-hidden="true"></i>
         </button>
         <span class="erp-logo-text">
-            <span class="erp-logo-title">APP Ticketing System</span>
-            <span class="erp-logo-subtitle">Enterprise Workspace</span>
+            <span class="erp-logo-title">SupportDesk Pro</span>
+            <span class="erp-logo-subtitle">Integrated Support & Ticketing Platform</span>
         </span>
     </div>
 
@@ -51,7 +84,14 @@
             <div class="erp-nav-group {{ $sectionIndex > 0 ? 'has-gap' : '' }}">
                 <div class="erp-nav-section">{{ $section['title'] }}</div>
 
-                @foreach ($section['groups'] as $group)
+                @foreach ($section['custom'] ?? [] as $item)
+                    <a class="erp-nav-link {{ !empty($item['active']) ? 'active' : '' }}" href="{{ $item['url'] }}" title="{{ $item['label'] }}">
+                        <i class="bi {{ $item['icon'] }}"></i>
+                        <span class="erp-nav-label">{{ $item['label'] }}</span>
+                    </a>
+                @endforeach
+
+                @foreach ($section['groups'] ?? [] as $group)
                     @php
                         $module = $modules->get($group);
                         $moduleLabel = $section['labels'][$group] ?? $group;

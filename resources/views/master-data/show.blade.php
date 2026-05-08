@@ -1,7 +1,13 @@
 @extends('layouts.erp')
 
 @php
-    $actions = '<a class="btn btn-sm btn-outline-secondary" href="'.route($config['route'].'.index').'"><i class="bi bi-arrow-left me-1"></i>Back</a><a class="btn btn-sm btn-primary" href="'.route($config['route'].'.edit', $record).'"><i class="bi bi-pencil me-1"></i>Edit</a>';
+    $access = app(\App\Services\UiAuthorizationService::class);
+    $resourceKey = $access->resourceKeyFromRoute($config['route'] ?? null);
+    $actions = '<a class="btn btn-sm btn-outline-secondary" href="'.route($config['route'].'.index').'"><i class="bi bi-arrow-left me-1"></i>Back</a>';
+
+    if ($resourceKey && $access->canResource($resourceKey, 'update')) {
+        $actions .= '<a class="btn btn-sm btn-primary" href="'.route($config['route'].'.edit', $record).'"><i class="bi bi-pencil me-1"></i>Edit</a>';
+    }
 @endphp
 
 @section('content')

@@ -14,6 +14,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\View as ViewFactory;
 use Illuminate\View\View;
+use App\Services\UiAuthorizationService;
 
 abstract class BaseMasterController extends Controller
 {
@@ -21,6 +22,8 @@ abstract class BaseMasterController extends Controller
 
     public function index(): View
     {
+        $this->authorizeMasterAction('view');
+
         return view('master-data.index', $this->viewData([
             'options' => $this->selectOptions(),
             'datatableColumns' => $this->datatableColumns(),
@@ -30,6 +33,8 @@ abstract class BaseMasterController extends Controller
 
     public function datatable(Request $request): JsonResponse
     {
+        $this->authorizeMasterAction('view');
+
         $query = $this->query();
         $recordsTotal = (clone $query)->count();
 
@@ -56,6 +61,8 @@ abstract class BaseMasterController extends Controller
 
     public function create(): View
     {
+        $this->authorizeMasterAction('create');
+
         return view('master-data.form', $this->viewData([
             'record' => $this->newModel(),
             'options' => $this->selectOptions(),
@@ -65,6 +72,8 @@ abstract class BaseMasterController extends Controller
 
     public function store(MasterDataRequest $request): RedirectResponse
     {
+        $this->authorizeMasterAction('create');
+
         $record = $this->newModel();
         $record->fill($this->validatedData($request));
         $record->save();
@@ -75,6 +84,8 @@ abstract class BaseMasterController extends Controller
 
     public function show(Request $request, mixed $record): View
     {
+        $this->authorizeMasterAction('view');
+
         $record = $this->findRecord($record);
         $record->load($this->config('with') ?? []);
 
@@ -86,6 +97,8 @@ abstract class BaseMasterController extends Controller
 
     public function edit(Request $request, mixed $record): View
     {
+        $this->authorizeMasterAction('update');
+
         $record = $this->findRecord($record);
         $record->load($this->config('with') ?? []);
 
@@ -98,6 +111,8 @@ abstract class BaseMasterController extends Controller
 
     public function update(MasterDataRequest $request, mixed $record): RedirectResponse
     {
+        $this->authorizeMasterAction('update');
+
         $record = $this->findRecord($record);
         $record->fill($this->validatedData($request, $record));
         $record->save();
@@ -108,6 +123,8 @@ abstract class BaseMasterController extends Controller
 
     public function destroy(Request $request, mixed $record): RedirectResponse
     {
+        $this->authorizeMasterAction('delete');
+
         $record = $this->findRecord($record);
         $record->delete();
 
@@ -148,7 +165,7 @@ abstract class BaseMasterController extends Controller
         $options = [];
 
         foreach ($this->config('fields') as $field) {
-            if (($field['type'] ?? null) !== 'select' || empty($field['relation'])) {
+            if (! in_array(($field['type'] ?? null), ['select', 'multi_select'], true) || empty($field['relation'])) {
                 continue;
             }
 
@@ -394,5 +411,10 @@ abstract class BaseMasterController extends Controller
     protected function hasConfiguredColumn(string $key): bool
     {
         return collect($this->config('columns'))->contains(fn (array $column) => $column['key'] === $key);
+    }
+
+    protected function authorizeMasterAction(string $action): void
+    {
+        app(UiAuthorizationService::class)->authorizeResource($this->resourceKey, $action);
     }
 }

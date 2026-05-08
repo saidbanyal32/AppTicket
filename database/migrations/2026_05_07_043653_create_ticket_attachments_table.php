@@ -22,7 +22,7 @@ return new class extends Migration
             $table->unsignedBigInteger('file_size');
             $table->string('disk', 50);
             $table->string('file_path');
-            $table->foreignId('uploaded_by')->constrained('users')->restrictOnDelete();
+            $table->foreignUuid('uploaded_by')->constrained('sys_users')->restrictOnDelete();
             $table->timestamps();
             $table->softDeletes();
         });

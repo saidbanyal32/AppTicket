@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('ticket_logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('ticket_id')->constrained('tickets')->cascadeOnDelete();
-            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignUuid('user_id')->nullable()->constrained('sys_users')->nullOnDelete();
             $table->string('action', 80)->index();
             $table->string('field_name', 80)->nullable();
             $table->jsonb('old_value')->nullable();

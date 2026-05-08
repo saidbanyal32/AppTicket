@@ -1,7 +1,11 @@
 @extends('layouts.erp')
 
 @php
-    $actions = '<a class="btn btn-sm btn-outline-secondary" href="'.route('tickets.index').'"><i class="bi bi-arrow-left me-1"></i>Back</a> <a class="btn btn-sm btn-primary" href="'.route('tickets.edit', $ticket).'"><i class="bi bi-pencil me-1"></i>Edit</a>';
+    $actions = '<a class="btn btn-sm btn-outline-secondary" href="'.route('tickets.index').'"><i class="bi bi-arrow-left me-1"></i>Back</a>';
+
+    if (auth()->user()?->can('update', $ticket)) {
+        $actions .= ' <a class="btn btn-sm btn-primary" href="'.route('tickets.edit', $ticket).'"><i class="bi bi-pencil me-1"></i>Edit</a>';
+    }
 @endphp
 
 @section('content')
@@ -77,25 +81,35 @@
             <section class="erp-panel">
                 <div class="erp-panel-header"><h2 class="erp-panel-title">Actions</h2></div>
                 <div class="erp-panel-body">
-                    <form method="POST" action="{{ route('tickets.assign', $ticket) }}" class="mb-2">
-                        @csrf
-                        <label class="form-label">Assign To</label>
-                        <select class="form-select js-select2 mb-2" name="assigned_to">
-                            @foreach ($users as $user)<option value="{{ $user->id }}" @selected($ticket->assigned_to === $user->id)>{{ $user->name }}</option>@endforeach
-                        </select>
-                        <input class="form-control mb-2" name="note" placeholder="Assignment note">
-                        <button class="btn btn-sm btn-outline-primary w-100" type="submit"><i class="bi bi-person-check me-1"></i>Assign</button>
-                    </form>
+                    @can('assign', $ticket)
+                        <form method="POST" action="{{ route('tickets.assign', $ticket) }}" class="mb-2">
+                            @csrf
+                            <label class="form-label">Assign To</label>
+                            <select class="form-select js-select2 mb-2" name="assigned_to">
+                                @foreach ($users as $user)<option value="{{ $user->id }}" @selected($ticket->assigned_to === $user->id)>{{ $user->name }}</option>@endforeach
+                            </select>
+                            <input class="form-control mb-2" name="note" placeholder="Assignment note">
+                            <button class="btn btn-sm btn-outline-primary w-100" type="submit"><i class="bi bi-person-check me-1"></i>Assign</button>
+                        </form>
+                    @endcan
 
-                    <form method="POST" action="{{ route('tickets.status', $ticket) }}">
-                        @csrf
-                        <label class="form-label">Change Status</label>
-                        <select class="form-select js-select2 mb-2" name="status">
-                            @foreach (\App\Models\Ticket::STATUSES as $status)<option value="{{ $status }}" @selected($ticket->status === $status)>{{ str_replace('_', ' ', $status) }}</option>@endforeach
-                        </select>
-                        <input class="form-control mb-2" name="note" placeholder="Status note">
-                        <button class="btn btn-sm btn-outline-primary w-100" type="submit"><i class="bi bi-arrow-repeat me-1"></i>Update Status</button>
-                    </form>
+                    @can('changeStatus', $ticket)
+                        <form method="POST" action="{{ route('tickets.status', $ticket) }}">
+                            @csrf
+                            <label class="form-label">Change Status</label>
+                            <select class="form-select js-select2 mb-2" name="status">
+                                @foreach (\App\Models\Ticket::STATUSES as $status)<option value="{{ $status }}" @selected($ticket->status === $status)>{{ str_replace('_', ' ', $status) }}</option>@endforeach
+                            </select>
+                            <input class="form-control mb-2" name="note" placeholder="Status note">
+                            <button class="btn btn-sm btn-outline-primary w-100" type="submit"><i class="bi bi-arrow-repeat me-1"></i>Update Status</button>
+                        </form>
+                    @endcan
+
+                    @cannot('assign', $ticket)
+                        @cannot('changeStatus', $ticket)
+                            <div class="text-muted">No available actions.</div>
+                        @endcannot
+                    @endcannot
                 </div>
             </section>
 

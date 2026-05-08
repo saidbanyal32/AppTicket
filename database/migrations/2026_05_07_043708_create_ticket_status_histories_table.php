@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('ticket_id')->constrained('tickets')->cascadeOnDelete();
             $table->string('old_status', 30)->nullable();
             $table->string('new_status', 30)->index();
-            $table->foreignId('changed_by')->constrained('users')->restrictOnDelete();
+            $table->foreignUuid('changed_by')->constrained('sys_users')->restrictOnDelete();
             $table->timestamp('created_at')->nullable();
         });
     }

@@ -83,6 +83,31 @@ window.ErpDataTable = {
 
         const $panel = $table.closest(".erp-panel");
         const $filters = $panel.find(".js-erp-datatable-filters");
+        const canExport = String($table.data("can-export") || "0") === "1";
+        const syncTicketScopeFilters = () => {
+            const scope = $filters.find(".js-ticket-scope").val();
+
+            $filters.find("[data-visible-scopes]").each(function () {
+                const $field = $(this);
+                const isVisible = String($field.data("visible-scopes") || "")
+                    .split(/\s+/)
+                    .includes(scope);
+
+                $field.toggleClass("d-none", !isVisible);
+
+                if (!isVisible) {
+                    $field.find(":input[name]").val("").trigger("change.select2");
+                }
+            });
+        };
+        const syncTicketTabCounts = (counts = {}) => {
+            $panel.find(".js-ticket-tab-count").each(function () {
+                const key = $(this).data("ticket-scope-count");
+                const value = Number(counts[key] || 0);
+
+                $(this).text(value.toLocaleString());
+            });
+        };
         const configuredColumns = parseJson($table.attr("data-erp-columns"));
         const columns = [
             {
@@ -115,13 +140,13 @@ window.ErpDataTable = {
                 [10, 25, 50, 100],
             ],
             dom: "<'erp-datatable-actions'B>rt<'erp-datatable-footer'<'erp-datatable-summary'li><'erp-datatable-pagination'p>>",
-            buttons: [
+            buttons: canExport ? [
                 { extend: "excelHtml5", text: '<i class="bi bi-file-earmark-excel me-1"></i>Excel', className: "btn btn-sm btn-primary text-white" },
                 { extend: "pdfHtml5", text: '<i class="bi bi-file-earmark-pdf me-1"></i>PDF', className: "btn btn-sm btn-primary text-white", orientation: "landscape", pageSize: "A4" },
                 { extend: "csvHtml5", text: '<i class="bi bi-filetype-csv me-1"></i>CSV', className: "btn btn-sm btn-primary text-white" },
                 { extend: "print", text: '<i class="bi bi-printer me-1"></i>Print', className: "btn btn-sm btn-primary text-white" },
                 { extend: "copyHtml5", text: '<i class="bi bi-copy me-1"></i>Copy', className: "btn btn-sm btn-primary text-white" },
-            ],
+            ] : [],
             ajax: {
                 url: ajaxUrl,
                 data(data) {
@@ -157,6 +182,29 @@ window.ErpDataTable = {
             },
         });
 
+        $table.on("xhr.dt", function (_event, _settings, json) {
+            if (json?.tabCounts) {
+                syncTicketTabCounts(json.tabCounts);
+            }
+        });
+
+        syncTicketScopeFilters();
+
+        $panel.find(".js-ticket-scope-tab").on("click", function () {
+            const scope = $(this).data("ticket-scope");
+
+            $panel.find(".js-ticket-scope-tab")
+                .removeClass("active")
+                .attr("aria-selected", "false");
+            $(this)
+                .addClass("active")
+                .attr("aria-selected", "true");
+
+            $filters.find(".js-ticket-scope").val(scope);
+            syncTicketScopeFilters();
+            dataTable.draw();
+        });
+
         $filters.find(".js-datatable-keyword").on("input", function () {
             dataTable.search(this.value).draw();
         });
@@ -171,7 +219,7 @@ window.ErpDataTable = {
         });
 
         $filters.find(".js-datatable-reset").on("click", function () {
-            $filters.find(":input[name]").val("").trigger("change.select2");
+            $filters.find(":input[name]").not(".js-ticket-scope").val("").trigger("change.select2");
             dataTable.search("");
             dataTable.draw();
         });
@@ -196,6 +244,78 @@ $(function () {
     $(".js-sidebar-toggle").on("click", function () {
         setSidebarState(!document.body.classList.contains("erp-sidebar-open"));
     });
+
+    $(".js-password-toggle").on("click", function () {
+        const $button = $(this);
+        const $input = $button.closest(".input-group").find(".js-password-input");
+        const showing = $input.attr("type") === "text";
+
+        $input.attr("type", showing ? "password" : "text");
+        $button.attr("title", showing ? "Show password" : "Hide password");
+        $button.find("i").toggleClass("bi-eye", showing).toggleClass("bi-eye-slash", !showing);
+    });
+
+    $(".js-loading-form").on("submit", function () {
+        const $form = $(this);
+        const $button = $form.find(".erp-auth-submit");
+
+        $button.prop("disabled", true);
+        $button.find(".js-submit-label").addClass("d-none");
+        $button.find(".js-submit-loading").removeClass("d-none");
+    });
+
+    $(".js-role-permission-form").on("click", ".js-permission-select-all", function () {
+        const $form = $(this).closest(".js-role-permission-form");
+        const target = $(this).data("target");
+        const $checks = $form.find(target).filter(":enabled");
+        const shouldCheck = $checks.filter(":checked").length !== $checks.length;
+
+        $checks.prop("checked", shouldCheck).trigger("change");
+    });
+
+    $(".js-role-permission-form").on("change", ".js-permission-check", function () {
+        const $form = $(this).closest(".js-role-permission-form");
+        const target = $(this).data("module-target");
+
+        if (!target) {
+            return;
+        }
+
+        const $moduleChecks = $form.find(target);
+        const checked = $moduleChecks.filter(":checked").length;
+        const total = $moduleChecks.length;
+
+        $form.find(`.erp-module-permission-count[data-module-target="${target}"]`).text(`${checked}/${total}`);
+    });
+
+    const syncPermissionCatalogs = () => {
+        const $module = $(".js-permission-module");
+
+        if (!$module.length) {
+            return;
+        }
+
+        const slug = $module.find(":selected").data("module-slug") || "";
+
+        $(".js-permission-catalog").each(function () {
+            const $catalog = $(this);
+            const visible = $catalog.data("module-scope") === slug;
+
+            $catalog.toggleClass("d-none", !visible);
+
+            if (!visible) {
+                $catalog.find(":checkbox").prop("checked", false);
+            }
+        });
+
+        $(".js-permission-empty-scope").each(function () {
+            const hasVisibleCatalog = $(this).siblings(".js-permission-catalog").not(".d-none").length > 0;
+            $(this).toggleClass("d-none", hasVisibleCatalog);
+        });
+    };
+
+    $(".js-permission-module").on("change", syncPermissionCatalogs);
+    syncPermissionCatalogs();
 
     $(".erp-nav .collapse")
         .on("show.bs.collapse", function () {

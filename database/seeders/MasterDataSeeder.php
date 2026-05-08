@@ -2,25 +2,29 @@
 
 namespace Database\Seeders;
 
-use App\Models\Master\RefCostCode;
-use App\Models\Master\RefItemCategory;
-use App\Models\Master\RefItemUnit;
 use App\Models\Master\RefJabatan;
 use App\Models\Master\RefTicketCategory;
 use App\Models\Master\RefTicketSla;
 use App\Models\Master\RefUnit;
-use App\Models\Master\RefVendorType;
+use App\Models\Master\SysAction;
+use App\Models\Master\SysModule;
 use App\Models\Master\SysPermission;
 use App\Models\Master\SysRole;
 use App\Models\Master\SysUser;
 use App\Models\Setting;
-use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use Spatie\Permission\PermissionRegistrar;
 
 class MasterDataSeeder extends Seeder
 {
+    private array $globalActions = ['view', 'create', 'update', 'delete', 'approve', 'reject', 'export', 'print', 'upload'];
+
     public function run(): void
     {
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
         $restoreOrCreate = function (string $model, array $where, array $values = []) {
             $record = $model::withTrashed()->where($where)->first();
 
@@ -35,12 +39,10 @@ class MasterDataSeeder extends Seeder
         };
 
         $unit = $restoreOrCreate(RefUnit::class, ['code' => 'HO'], ['name' => 'Head Office', 'is_active' => true]);
-        $projectUnit = $restoreOrCreate(RefUnit::class, ['code' => 'PRJ'], ['name' => 'Project Operation', 'parent_id' => $unit->id, 'is_active' => true]);
 
         $jabatan = $restoreOrCreate(RefJabatan::class, ['code' => 'ADM'], ['name' => 'Administrator', 'level' => 1, 'is_active' => true]);
-        $restoreOrCreate(RefJabatan::class, ['code' => 'PM'], ['name' => 'Project Manager', 'level' => 2, 'is_active' => true]);
 
-        $restoreOrCreate(SysUser::class,
+        $adminUser = $restoreOrCreate(SysUser::class,
             ['username' => 'admin'],
             [
                 'unit_id' => $unit->id,
@@ -53,33 +55,90 @@ class MasterDataSeeder extends Seeder
             ]
         );
 
-        User::firstOrCreate(
-            ['email' => 'administrator@example.test'],
-            ['name' => 'Administrator', 'password' => 'password']
-        );
+        $superAdmin = $restoreOrCreate(SysRole::class, ['code' => 'SUPERADMIN'], ['name' => 'Super Admin', 'guard_name' => 'web', 'is_active' => true]);
+        $admin = $restoreOrCreate(SysRole::class, ['code' => 'ADMIN'], ['name' => 'Admin', 'guard_name' => 'web', 'is_active' => true]);
+        $restoreOrCreate(SysRole::class, ['code' => 'USER'], ['name' => 'User', 'guard_name' => 'web', 'is_active' => true]);
 
-        $role = $restoreOrCreate(SysRole::class, ['code' => 'SUPERADMIN'], ['name' => 'Super Administrator', 'is_active' => true]);
+        $moduleRecords = collect();
+        $actionRecords = collect();
 
-        foreach (config('master-data') as $key => $config) {
+        if (Schema::hasTable('sys_modules') && Schema::hasTable('sys_actions')) {
+            foreach ([
+                ['Users', 'users', 'bi-people', 10],
+                ['Roles', 'roles', 'bi-shield-check', 20],
+                ['Permissions', 'permissions', 'bi-key', 30],
+                ['Ticket', 'ticket', 'bi-ticket-detailed', 50],
+                ['Role Permissions', 'role-permissions', 'bi-diagram-2', 70],
+                ['Settings', 'settings', 'bi-gear', 80],
+            ] as [$name, $slug, $icon, $sortNo]) {
+                $moduleRecords[$slug] = $restoreOrCreate(SysModule::class, ['slug' => $slug], ['name' => $name, 'icon' => $icon, 'sort_no' => $sortNo, 'is_active' => true]);
+            }
+
+            foreach ($this->globalActions as $index => $slug) {
+                $actionRecords[$slug] = $restoreOrCreate(SysAction::class, ['slug' => $slug], ['name' => Str::headline($slug), 'sort_no' => ($index + 1) * 10, 'is_active' => true]);
+            }
+        }
+
+        $permissions = [
+            'users' => ['view', 'create', 'update', 'delete'],
+            'roles' => ['view', 'create', 'update', 'delete'],
+            'permissions' => ['view', 'create', 'update', 'delete', 'manage'],
+            'role-permissions' => ['manage'],
+            'tickets' => ['view', 'create', 'update', 'delete', 'assign', 'approve'],
+            'settings' => ['view', 'update'],
+        ];
+
+        foreach ($permissions as $module => $actions) {
+            foreach ($actions as $action) {
+                $slug = $module.'.'.$action;
+                $permissionModule = $module === 'tickets' ? 'ticket' : $module;
+                $moduleRecord = $moduleRecords->get($permissionModule);
+                $actionRecord = $actionRecords->get($action);
+                $restoreOrCreate(SysPermission::class,
+                    ['code' => $slug],
+                    [
+                        'module_id' => $moduleRecord?->id,
+                        'action_id' => $actionRecord?->id,
+                        'module' => $permissionModule,
+                        'name' => $slug,
+                        'permission_name' => Str::headline($slug),
+                        'permission_slug' => $slug,
+                        'permission_type' => $this->permissionTypeForAction($action, $slug),
+                        'guard_name' => 'web',
+                        'description' => Str::headline($slug),
+                    ]
+                );
+            }
+        }
+
+        foreach ([
+            'my_request' => 'My Request',
+            'need_assignment' => 'Need Assignment',
+            'assign_to_me' => 'Assign To Me',
+            'overdue' => 'Overdue',
+            'closed' => 'Closed',
+            'all' => 'All Tickets',
+        ] as $tab => $label) {
+            $slug = 'ticket.tab.'.$tab;
             $restoreOrCreate(SysPermission::class,
-                ['code' => $key.'.view'],
-                ['module' => $config['group'], 'name' => 'View '.$config['title']]
-            );
-            $restoreOrCreate(SysPermission::class,
-                ['code' => $key.'.manage'],
-                ['module' => $config['group'], 'name' => 'Manage '.$config['title']]
+                ['code' => $slug],
+                [
+                    'module_id' => $moduleRecords->get('ticket')?->id,
+                    'action_id' => $actionRecords->get($tab)?->id,
+                    'module' => 'ticket',
+                    'name' => $slug,
+                    'permission_name' => 'Ticket Tab '.$label,
+                    'permission_slug' => $slug,
+                    'permission_type' => SysPermission::TYPE_WORKFLOW_ACCESS,
+                    'guard_name' => 'web',
+                    'description' => 'Access ticket workflow tab: '.$label,
+                ]
             );
         }
 
-        $role->permissions()->syncWithoutDetaching(SysPermission::pluck('id')->all());
-
-        $restoreOrCreate(RefItemCategory::class, ['code' => 'MAT'], ['name' => 'Material', 'is_active' => true]);
-        $restoreOrCreate(RefItemUnit::class, ['code' => 'PCS'], ['name' => 'Pieces']);
-        $restoreOrCreate(RefItemUnit::class, ['code' => 'M3'], ['name' => 'Cubic Meter']);
-
-        $restoreOrCreate(RefCostCode::class, ['code' => '1000', 'project_id' => null], ['name' => 'Direct Cost', 'level' => 1, 'type' => 'material', 'is_active' => true]);
-        $restoreOrCreate(RefVendorType::class, ['code' => 'SUP'], ['name' => 'Supplier', 'is_active' => true]);
-        $restoreOrCreate(RefVendorType::class, ['code' => 'SUB'], ['name' => 'Subcontractor', 'is_active' => true]);
+        $superAdmin->permissions()->sync(SysPermission::pluck('id')->all());
+        $admin->permissions()->sync(SysPermission::whereIn('module', ['users', 'tickets', 'ticket', 'settings'])->pluck('id')->all());
+        $adminUser->assignRole($superAdmin);
 
         foreach (['low' => [120, 2880], 'medium' => [60, 1440], 'high' => [30, 480], 'critical' => [15, 240]] as $priority => [$response, $resolve]) {
             $restoreOrCreate(RefTicketSla::class,
@@ -102,5 +161,22 @@ class MasterDataSeeder extends Seeder
         ] as $key => [$value, $type, $description]) {
             Setting::firstOrCreate(['key' => $key], compact('value', 'type', 'description'));
         }
+    }
+
+    private function permissionTypeForAction(string $action, string $slug): string
+    {
+        if (in_array($action, $this->globalActions, true)) {
+            return SysPermission::TYPE_GLOBAL_ACTION;
+        }
+
+        if (Str::contains($slug, ['.tab.', '.workflow.']) || in_array($action, ['my_request', 'need_assignment', 'assign_to_me', 'overdue', 'closed'], true)) {
+            return SysPermission::TYPE_WORKFLOW_ACCESS;
+        }
+
+        if (Str::contains($slug, ['analytics', 'sla', 'monitor', 'adjust', 'manage'])) {
+            return SysPermission::TYPE_ADVANCED_ACCESS;
+        }
+
+        return SysPermission::TYPE_FEATURE_ACCESS;
     }
 }

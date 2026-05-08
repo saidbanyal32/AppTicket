@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RolePermission extends BaseMasterModel
 {
-    protected $table = 'role_permissions';
+    protected $table = 'sys_role_permissions';
 
     public function role(): BelongsTo
     {

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Master\SysUser;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -27,6 +28,6 @@ class TicketLog extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(SysUser::class);
     }
 }

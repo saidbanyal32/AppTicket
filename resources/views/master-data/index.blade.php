@@ -1,5 +1,10 @@
 @extends('layouts.erp')
 
+@php
+    $access = app(\App\Services\UiAuthorizationService::class);
+    $resourceKey = $access->resourceKeyFromRoute($config['route'] ?? null);
+@endphp
+
 
 
 @section('content')
@@ -15,6 +20,7 @@
                 class="table table-hover align-middle js-erp-datatable"
                 data-ajax-url="{{ route($config['route'].'.datatable') }}"
                 data-erp-columns='@json($datatableColumns)'
+                data-can-export="{{ $resourceKey && $access->canResource($resourceKey, 'export') ? '1' : '0' }}"
             >
                 <thead>
                     <tr>

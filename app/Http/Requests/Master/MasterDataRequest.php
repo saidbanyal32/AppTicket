@@ -40,7 +40,7 @@ class MasterDataRequest extends FormRequest
         }
 
         if (($config['route'] ?? null) === 'master.role-permissions') {
-            $rules['permission_id'][] = Rule::unique('role_permissions', 'permission_id')
+            $rules['permission_id'][] = Rule::unique('sys_role_permissions', 'permission_id')
                 ->where(fn ($query) => $query->where('role_id', $this->input('role_id')))
                 ->ignore($id);
         }
@@ -57,6 +57,14 @@ class MasterDataRequest extends FormRequest
             if (($field['type'] ?? null) === 'boolean') {
                 $merge[$name] = $this->boolean($name);
             }
+        }
+
+        if (($this->config()['route'] ?? null) === 'master.permissions' && $this->filled('name')) {
+            $merge['code'] = str($this->input('name'))->lower()->replace(' ', '.')->replace('_', '-')->toString();
+        }
+
+        if (in_array(($this->config()['route'] ?? null), ['master.modules', 'master.actions'], true) && ! $this->filled('slug') && $this->filled('name')) {
+            $merge['slug'] = str($this->input('name'))->slug()->toString();
         }
 
         $this->merge($merge);

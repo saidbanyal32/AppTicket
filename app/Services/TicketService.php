@@ -3,14 +3,16 @@
 namespace App\Services;
 
 use App\Models\AppNotification;
+use App\Models\Master\RefJabatan;
 use App\Models\Master\RefTicketSla;
+use App\Models\Master\RefUnit;
+use App\Models\Master\SysUser;
 use App\Models\Ticket;
 use App\Models\TicketAssignment;
 use App\Models\TicketAttachment;
 use App\Models\TicketComment;
 use App\Models\TicketLog;
 use App\Models\TicketStatusHistory;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
@@ -97,7 +99,7 @@ class TicketService
         });
     }
 
-    public function assign(Ticket $ticket, int $assignedTo, Request $request, ?string $note = null): void
+    public function assign(Ticket $ticket, string $assignedTo, Request $request, ?string $note = null): void
     {
         DB::transaction(function () use ($ticket, $assignedTo, $request, $note) {
             $oldAssignee = $ticket->assigned_to;
@@ -183,22 +185,47 @@ class TicketService
         return $prefix.str_pad((string) $next, 5, '0', STR_PAD_LEFT);
     }
 
-    public function currentUserId(): int
+    public function currentUserId(): string
     {
-        $authId = auth()->id();
+        $authUser = auth()->user();
 
-        if ($authId && User::whereKey($authId)->exists()) {
-            return $authId;
+        if ($authUser) {
+            $sysUser = SysUser::query()
+                ->where('email', $authUser->email)
+                ->orWhere('name', $authUser->name)
+                ->first();
+
+            if ($sysUser) {
+                return $sysUser->id;
+            }
         }
 
-        return User::query()->value('id') ?? User::query()->create([
+        if ($id = SysUser::query()->value('id')) {
+            return $id;
+        }
+
+        $unit = RefUnit::query()->firstOrCreate(
+            ['code' => 'HO'],
+            ['name' => 'Head Office', 'is_active' => true]
+        );
+        $jabatan = RefJabatan::query()->firstOrCreate(
+            ['code' => 'ADM'],
+            ['name' => 'Administrator', 'level' => 1, 'is_active' => true]
+        );
+
+        return SysUser::query()->create([
+            'unit_id' => $unit->id,
+            'jabatan_id' => $jabatan->id,
+            'employee_no' => 'EMP-0001',
             'name' => 'Administrator',
-            'email' => 'administrator@example.test',
-            'password' => bcrypt(Str::random(24)),
+            'email' => 'admin@zainerp.local',
+            'username' => 'admin',
+            'password' => Str::random(24),
+            'is_active' => true,
         ])->id;
     }
 
-    private function resolveSla(?int $categoryId, ?string $priority): ?RefTicketSla
+    private function resolveSla(?string $categoryId, ?string $priority): ?RefTicketSla
     {
         if (! $priority) {
             return null;
@@ -210,7 +237,7 @@ class TicketService
             ->first();
     }
 
-    private function recordStatus(Ticket $ticket, ?string $old, string $new, int $userId): void
+    private function recordStatus(Ticket $ticket, ?string $old, string $new, string $userId): void
     {
         TicketStatusHistory::create([
             'ticket_id' => $ticket->id,
@@ -221,7 +248,7 @@ class TicketService
         ]);
     }
 
-    private function log(Ticket $ticket, ?int $userId, string $action, ?string $field, mixed $old, mixed $new, ?string $note, Request $request): void
+    private function log(Ticket $ticket, ?string $userId, string $action, ?string $field, mixed $old, mixed $new, ?string $note, Request $request): void
     {
         TicketLog::create([
             'ticket_id' => $ticket->id,
@@ -237,7 +264,7 @@ class TicketService
         ]);
     }
 
-    private function notifyUser(?int $userId, string $type, string $title, string $message, ?string $url): void
+    private function notifyUser(?string $userId, string $type, string $title, string $message, ?string $url): void
     {
         if (! $userId) {
             return;

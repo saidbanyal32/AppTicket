@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Master\RefJabatan;
 use App\Models\Master\RefTicketCategory;
 use App\Models\Master\RefTicketSla;
+use App\Models\Master\SysUser;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -41,22 +42,22 @@ class Ticket extends Model
 
     public function requester(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'requester_id');
+        return $this->belongsTo(SysUser::class, 'requester_id');
     }
 
     public function assignee(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'assigned_to');
+        return $this->belongsTo(SysUser::class, 'assigned_to');
     }
 
     public function resolvedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'resolved_by');
+        return $this->belongsTo(SysUser::class, 'resolved_by');
     }
 
     public function closedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'closed_by');
+        return $this->belongsTo(SysUser::class, 'closed_by');
     }
 
     public function jabatan(): BelongsTo

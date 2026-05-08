@@ -1,3 +1,8 @@
+@php
+    $access = app(\App\Services\UiAuthorizationService::class);
+    $resourceKey = $access->resourceKeyFromRoute($config['route'] ?? null);
+@endphp
+
 <div class="erp-toolbar erp-filter-bar js-erp-datatable-filters">
     <input
         class="form-control erp-search js-datatable-keyword"
@@ -36,7 +41,9 @@
     <button class="btn btn-sm btn-outline-secondary js-datatable-reset" type="button">
         <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
     </button>
-    <a class="btn btn-sm btn-primary ms-auto" href="{{ route($config['route'].'.create') }}">
-        <i class="bi bi-plus-lg me-1"></i>Add
-    </a>
+    @if ($resourceKey && $access->canResource($resourceKey, 'create'))
+        <a class="btn btn-sm btn-primary ms-auto" href="{{ route($config['route'].'.create') }}">
+            <i class="bi bi-plus-lg me-1"></i>Add
+        </a>
+    @endif
 </div>

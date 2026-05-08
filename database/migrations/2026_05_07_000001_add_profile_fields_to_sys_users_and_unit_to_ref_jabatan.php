@@ -14,7 +14,7 @@ return new class extends Migration
         });
 
         Schema::table('ref_jabatan', function (Blueprint $table) {
-            $table->foreignId('unit_id')->nullable()->after('level')->constrained('ref_units')->nullOnDelete();
+            $table->foreignUuid('unit_id')->nullable()->after('level')->constrained('ref_units')->nullOnDelete();
         });
     }
 

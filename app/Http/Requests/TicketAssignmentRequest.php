@@ -23,7 +23,7 @@ class TicketAssignmentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'assigned_to' => ['required', 'exists:users,id'],
+            'assigned_to' => ['required', 'exists:sys_users,id'],
             'note' => ['nullable', 'string', 'max:1000'],
         ];
     }

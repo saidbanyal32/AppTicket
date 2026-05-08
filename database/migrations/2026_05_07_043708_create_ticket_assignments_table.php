@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('ticket_assignments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('ticket_id')->constrained('tickets')->cascadeOnDelete();
-            $table->foreignId('assigned_from')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('assigned_to')->constrained('users')->restrictOnDelete();
+            $table->foreignUuid('assigned_from')->nullable()->constrained('sys_users')->nullOnDelete();
+            $table->foreignUuid('assigned_to')->constrained('sys_users')->restrictOnDelete();
             $table->text('note')->nullable();
             $table->timestamp('created_at')->nullable();
         });

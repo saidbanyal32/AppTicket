@@ -3,6 +3,8 @@
 namespace Database\Factories;
 
 use App\Models\User;
+use App\Models\Master\RefJabatan;
+use App\Models\Master\RefUnit;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -24,8 +26,15 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        $unit = RefUnit::query()->firstOrCreate(['code' => 'HO'], ['name' => 'Head Office', 'is_active' => true]);
+        $jabatan = RefJabatan::query()->firstOrCreate(['code' => 'ADM'], ['name' => 'Administrator', 'level' => 1, 'is_active' => true]);
+
         return [
+            'unit_id' => $unit->id,
+            'jabatan_id' => $jabatan->id,
+            'employee_no' => fake()->unique()->bothify('EMP-####'),
             'name' => fake()->name(),
+            'username' => fake()->unique()->userName(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),

@@ -1,6 +1,11 @@
 @extends('layouts.erp')
 
-@php($actions = '<a class="btn btn-sm btn-primary" href="'.route('settings.create').'"><i class="bi bi-plus-lg me-1"></i>Create Setting</a>')
+@php
+    $access = app(\App\Services\UiAuthorizationService::class);
+    $actions = $access->canResource('settings', 'create')
+        ? '<a class="btn btn-sm btn-primary" href="'.route('settings.create').'"><i class="bi bi-plus-lg me-1"></i>Create Setting</a>'
+        : '';
+@endphp
 
 @section('content')
     @if (session('status'))<div class="alert alert-success py-2 mb-2">{{ session('status') }}</div>@endif
@@ -17,11 +22,15 @@
                             <td>{{ $setting->description ?? '-' }}</td>
                             <td>
                                 <div class="btn-group">
-                                    <a class="btn btn-sm btn-outline-secondary" href="{{ route('settings.edit', $setting) }}"><i class="bi bi-pencil"></i></a>
-                                    <form method="POST" action="{{ route('settings.destroy', $setting) }}" onsubmit="return confirm('Delete setting?')">
-                                        @csrf @method('DELETE')
-                                        <button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-trash"></i></button>
-                                    </form>
+                                    @if ($access->canResource('settings', 'update'))
+                                        <a class="btn btn-sm btn-outline-secondary" href="{{ route('settings.edit', $setting) }}"><i class="bi bi-pencil"></i></a>
+                                    @endif
+                                    @if ($access->canResource('settings', 'delete'))
+                                        <form method="POST" action="{{ route('settings.destroy', $setting) }}" onsubmit="return confirm('Delete setting?')">
+                                            @csrf @method('DELETE')
+                                            <button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>

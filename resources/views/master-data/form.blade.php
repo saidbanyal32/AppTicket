@@ -43,13 +43,18 @@
 
                                 @if ($type === 'textarea')
                                     <textarea class="form-control @error($name) is-invalid @enderror" id="{{ $inputId }}" name="{{ $name }}">{{ $value }}</textarea>
-                                @elseif ($type === 'select')
-                                    <select class="form-select js-select2 @error($name) is-invalid @enderror" id="{{ $inputId }}" name="{{ $name }}">
+                                @elseif ($type === 'select' || $type === 'multi_select')
+                                    @php
+                                        $selectedValues = $type === 'multi_select'
+                                            ? collect(old($name, data_get($record, $field['relation'])?->pluck('id')->all() ?? []))->map(fn ($item) => (string) $item)->all()
+                                            : [(string) $value];
+                                    @endphp
+                                    <select class="form-select js-select2 @error($name) is-invalid @enderror" id="{{ $inputId }}" name="{{ $type === 'multi_select' ? $name.'[]' : $name }}" @if ($type === 'multi_select') multiple @endif>
                                         @if ($field['nullable'] ?? false)
                                             <option value="">- None -</option>
                                         @endif
                                         @foreach ($options[$field['relation']] ?? [] as $option)
-                                            <option value="{{ $option['id'] }}" @selected((string) $value === (string) $option['id'])>{{ $option['label'] }}</option>
+                                            <option value="{{ $option['id'] }}" @selected(in_array((string) $option['id'], $selectedValues, true))>{{ $option['label'] }}</option>
                                         @endforeach
                                     </select>
                                 @elseif ($type === 'select_static')

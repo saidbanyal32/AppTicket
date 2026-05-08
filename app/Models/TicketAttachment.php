@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Master\SysUser;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -32,7 +33,7 @@ class TicketAttachment extends Model
 
     public function uploader(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'uploaded_by');
+        return $this->belongsTo(SysUser::class, 'uploaded_by');
     }
 
     public function getUrlAttribute(): string

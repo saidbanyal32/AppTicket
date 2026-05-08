@@ -28,7 +28,7 @@ class TicketRequest extends FormRequest
             'category_id' => ['required', 'exists:ref_ticket_categories,id'],
             'priority' => ['required', 'in:LOW,MEDIUM,HIGH,CRITICAL'],
             'jabatan_id' => ['nullable', 'exists:ref_jabatan,id'],
-            'assigned_to' => ['nullable', 'exists:users,id'],
+            'assigned_to' => ['nullable', 'exists:sys_users,id'],
             'attachments' => ['nullable', 'array'],
             'attachments.*' => ['file', 'mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx,txt,zip', 'max:10240'],
         ];

@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('ref_ticket_slas', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('name', 150);
             $table->string('priority', 50)->index();
             $table->unsignedInteger('response_minutes');
@@ -18,9 +18,9 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->timestamps();
             $table->softDeletes();
-            $table->unsignedBigInteger('created_by')->nullable()->index();
-            $table->unsignedBigInteger('updated_by')->nullable()->index();
-            $table->unsignedBigInteger('deleted_by')->nullable()->index();
+            $table->uuid('created_by')->nullable()->index();
+            $table->uuid('updated_by')->nullable()->index();
+            $table->uuid('deleted_by')->nullable()->index();
         });
 
         Schema::table('ref_ticket_slas', function (Blueprint $table) {

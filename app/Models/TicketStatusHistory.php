@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Master\SysUser;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -25,6 +26,6 @@ class TicketStatusHistory extends Model
 
     public function changedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'changed_by');
+        return $this->belongsTo(SysUser::class, 'changed_by');
     }
 }

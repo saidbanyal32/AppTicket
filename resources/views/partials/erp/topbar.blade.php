@@ -11,9 +11,11 @@
     </div>
 
     <div class="erp-topbar-tools">
-        <button class="erp-icon-btn" type="button" title="Create">
-            <i class="bi bi-plus-lg"></i>
-        </button>
+        @if (app(\App\Services\UiAuthorizationService::class)->canResource('tickets', 'create'))
+            <a class="erp-icon-btn" href="{{ route('tickets.create') }}" title="Create Ticket">
+                <i class="bi bi-plus-lg"></i>
+            </a>
+        @endif
         <div class="dropdown">
             <button class="erp-icon-btn position-relative" type="button" data-bs-toggle="dropdown" title="Notifications">
                 <i class="bi bi-bell"></i>
@@ -37,8 +39,18 @@
         <button class="erp-icon-btn" type="button" title="Help">
             <i class="bi bi-question-circle"></i>
         </button>
-        <button class="btn btn-sm btn-outline-secondary" type="button">
-            <i class="bi bi-person-circle me-1"></i> Administrator
-        </button>
+        <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-person-circle me-1"></i> {{ auth()->user()?->name ?? 'User' }}
+            </button>
+            <div class="dropdown-menu dropdown-menu-end">
+                <span class="dropdown-item-text small text-muted">{{ auth()->user()?->email }}</span>
+                <div class="dropdown-divider"></div>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button class="dropdown-item" type="submit"><i class="bi bi-box-arrow-right me-1"></i> Logout</button>
+                </form>
+            </div>
+        </div>
     </div>
 </header>

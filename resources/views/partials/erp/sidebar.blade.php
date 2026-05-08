@@ -1,15 +1,14 @@
 @php
+    $access = app(\App\Services\UiAuthorizationService::class);
     $modules = collect(config('master-data'))
+        ->filter(fn ($item) => $access->canMasterConfig($item, 'view'))
         ->groupBy('group')
         ->map(function ($items, $group) {
             return [
                 'label' => $group,
                 'icon' => match ($group) {
                     'Master Organisasi' => 'bi-diagram-3',
-                    'Users & Akses' => 'bi-shield-lock',
-                    'Item / Material' => 'bi-box-seam',
-                    'Project' => 'bi-building',
-                    'Vendor' => 'bi-truck',
+                    'Users & Access' => 'bi-shield-lock',
                     'Master Ticketing' => 'bi-ticket-perforated',
                     default => 'bi-grid-1x2',
                 },
@@ -31,12 +30,13 @@
                     'icon' => 'bi-ticket-detailed',
                     'url' => route('tickets.index'),
                     'active' => request()->routeIs('tickets.*'),
+                    'permission' => config('access.menu.custom.tickets.permission'),
                 ],
             ],
         ],
         [
             'title' => 'Data Master',
-            'groups' => ['Master Organisasi', 'Item / Material', 'Project', 'Vendor'],
+            'groups' => ['Master Organisasi'],
         ],
         [
             'title' => 'Master Ticketing',
@@ -50,19 +50,21 @@
                     'icon' => 'bi-bell',
                     'url' => route('notifications.index'),
                     'active' => request()->routeIs('notifications.*'),
+                    'permission' => config('access.menu.custom.notifications.permission'),
                 ],
                 [
                     'label' => 'Settings',
                     'icon' => 'bi-gear',
                     'url' => route('settings.index'),
                     'active' => request()->routeIs('settings.*'),
+                    'permission' => config('access.menu.custom.settings.permission'),
                 ],
             ],
         ],
         [
-            'title' => 'Pengaturan Users & Akses',
-            'groups' => ['Users & Akses'],
-            'labels' => ['Users & Akses' => 'Users / Akses'],
+            'title' => 'Users & Access',
+            'groups' => ['Users & Access'],
+            'labels' => ['Users & Access' => 'Users & Access'],
         ],
     ];
 @endphp
@@ -81,17 +83,28 @@
 
     <nav class="erp-nav">
         @foreach ($sidebarSections as $sectionIndex => $section)
+            @php
+                $visibleCustom = collect($section['custom'] ?? [])
+                    ->filter(fn ($item) => $access->canAny($item['permission'] ?? null))
+                    ->values();
+                $visibleGroups = collect($section['groups'] ?? [])
+                    ->filter(fn ($group) => ! empty($modules->get($group)['children'] ?? []))
+                    ->values();
+            @endphp
+
+            @continue($visibleCustom->isEmpty() && $visibleGroups->isEmpty())
+
             <div class="erp-nav-group {{ $sectionIndex > 0 ? 'has-gap' : '' }}">
                 <div class="erp-nav-section">{{ $section['title'] }}</div>
 
-                @foreach ($section['custom'] ?? [] as $item)
+                @foreach ($visibleCustom as $item)
                     <a class="erp-nav-link {{ !empty($item['active']) ? 'active' : '' }}" href="{{ $item['url'] }}" title="{{ $item['label'] }}">
                         <i class="bi {{ $item['icon'] }}"></i>
                         <span class="erp-nav-label">{{ $item['label'] }}</span>
                     </a>
                 @endforeach
 
-                @foreach ($section['groups'] ?? [] as $group)
+                @foreach ($visibleGroups as $group)
                     @php
                         $module = $modules->get($group);
                         $moduleLabel = $section['labels'][$group] ?? $group;

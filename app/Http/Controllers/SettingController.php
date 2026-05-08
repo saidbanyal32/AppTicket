@@ -4,14 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SettingRequest;
 use App\Models\Setting;
+use App\Services\UiAuthorizationService;
 
 class SettingController extends Controller
 {
+    public function __construct(private readonly UiAuthorizationService $access) {}
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
+        $this->access->authorizeResource('settings', 'view');
+
         return view('settings.index', [
             'title' => 'Settings',
             'subtitle' => 'Application and ticketing runtime configuration',
@@ -25,6 +30,8 @@ class SettingController extends Controller
      */
     public function create()
     {
+        $this->access->authorizeResource('settings', 'create');
+
         return view('settings.form', $this->viewData(new Setting, 'create'));
     }
 
@@ -33,6 +40,8 @@ class SettingController extends Controller
      */
     public function store(SettingRequest $request)
     {
+        $this->access->authorizeResource('settings', 'create');
+
         $setting = Setting::create($request->validated());
 
         return redirect()->route('settings.edit', $setting)->with('status', 'Setting berhasil dibuat.');
@@ -43,6 +52,8 @@ class SettingController extends Controller
      */
     public function show(Setting $setting)
     {
+        $this->access->authorizeResource('settings', 'view');
+
         return redirect()->route('settings.edit', $setting);
     }
 
@@ -51,6 +62,8 @@ class SettingController extends Controller
      */
     public function edit(Setting $setting)
     {
+        $this->access->authorizeResource('settings', 'update');
+
         return view('settings.form', $this->viewData($setting, 'edit'));
     }
 
@@ -59,6 +72,8 @@ class SettingController extends Controller
      */
     public function update(SettingRequest $request, Setting $setting)
     {
+        $this->access->authorizeResource('settings', 'update');
+
         $setting->update($request->validated());
 
         return redirect()->route('settings.edit', $setting)->with('status', 'Setting berhasil diperbarui.');
@@ -69,6 +84,8 @@ class SettingController extends Controller
      */
     public function destroy(Setting $setting)
     {
+        $this->access->authorizeResource('settings', 'delete');
+
         $setting->delete();
 
         return redirect()->route('settings.index')->with('status', 'Setting berhasil dihapus.');

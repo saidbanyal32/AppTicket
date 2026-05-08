@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Master\SysUser;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -25,11 +26,11 @@ class TicketAssignment extends Model
 
     public function fromUser(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'assigned_from');
+        return $this->belongsTo(SysUser::class, 'assigned_from');
     }
 
     public function toUser(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'assigned_to');
+        return $this->belongsTo(SysUser::class, 'assigned_to');
     }
 }

@@ -3,6 +3,8 @@
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\HelpArticleController;
+use App\Http\Controllers\HelpCategoryController;
 use App\Http\Controllers\Master\ActionController;
 use App\Http\Controllers\Master\JabatanController;
 use App\Http\Controllers\Master\ModuleController;
@@ -14,6 +16,7 @@ use App\Http\Controllers\Master\TicketCategoryController;
 use App\Http\Controllers\Master\TicketSlaController;
 use App\Http\Controllers\Master\UnitController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\TicketController;
 use Illuminate\Support\Facades\Route;
@@ -36,6 +39,11 @@ Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
     ->name('logout');
 
 Route::middleware(['auth'])->group(function () {
+    Route::get('profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('profile/preferences', [ProfileController::class, 'preferences'])->name('profile.preferences');
+    Route::put('profile/password', [ProfileController::class, 'password'])->name('profile.password');
+
     Route::prefix('master')->name('master.')->group(function () {
         $masterResource = function (string $uri, string $controller): void {
             Route::get($uri.'/datatable', [$controller, 'datatable'])->name($uri.'.datatable');
@@ -64,12 +72,22 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('slas', TicketSlaController::class);
     });
 
-    Route::middleware('permission:ticket.tab.my_request|ticket.tab.need_assignment|ticket.tab.assign_to_me|ticket.tab.overdue|ticket.tab.closed|ticket.tab.all')->group(function () {
+    Route::middleware('permission:tickets.view|tickets.create|tickets.update|tickets.delete|tickets.assign|tickets.approve')->group(function () {
         Route::get('tickets/datatable', [TicketController::class, 'datatable'])->name('tickets.datatable');
         Route::post('tickets/{ticket}/comment', [TicketController::class, 'comment'])->name('tickets.comment');
         Route::post('tickets/{ticket}/assign', [TicketController::class, 'assign'])->name('tickets.assign');
         Route::post('tickets/{ticket}/status', [TicketController::class, 'changeStatus'])->name('tickets.status');
         Route::resource('tickets', TicketController::class);
+    });
+
+    Route::prefix('help-center')->name('help.')->middleware('permission:help.view|help.create|help.edit|help.delete|help.publish')->group(function () {
+        Route::get('categories/datatable', [HelpCategoryController::class, 'datatable'])->name('categories.datatable');
+        Route::resource('categories', HelpCategoryController::class);
+
+        Route::get('articles/datatable', [HelpArticleController::class, 'datatable'])->name('articles.datatable');
+        Route::post('articles/{article}/publish', [HelpArticleController::class, 'togglePublish'])->name('articles.publish');
+        Route::delete('articles/{article}/attachments/{attachment}', [HelpArticleController::class, 'destroyAttachment'])->name('articles.attachments.destroy');
+        Route::resource('articles', HelpArticleController::class);
     });
 
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');

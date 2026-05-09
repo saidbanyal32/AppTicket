@@ -15,31 +15,7 @@ class PermissionController extends BaseMasterController
 {
     protected string $resourceKey = 'permissions';
 
-    private array $globalActions = ['view', 'create', 'update', 'delete', 'approve', 'reject', 'export', 'print', 'upload'];
-
-    private array $workflowTabs = [
-        'ticket' => [
-            'my_request' => 'My Request',
-            'need_assignment' => 'Need Assignment',
-            'assign_to_me' => 'Assign To Me',
-            'overdue' => 'Overdue',
-            'closed' => 'Closed',
-            'all' => 'All Tickets',
-        ],
-    ];
-
-    private array $featureAccess = [
-        'ticket' => [
-            'assign' => 'Assign Ticket',
-        ],
-    ];
-
-    private array $advancedAccess = [
-        'ticket' => [
-            'analytics.view' => 'Ticket Analytics',
-            'sla.monitor' => 'SLA Monitoring',
-        ],
-    ];
+    private array $globalActions = ['view', 'create', 'update', 'delete', 'approve', 'reject', 'assign', 'export', 'print', 'upload', 'manage'];
 
     public function index(): View
     {
@@ -70,9 +46,6 @@ class PermissionController extends BaseMasterController
                 ->orderBy('sort_no')
                 ->orderBy('name')
                 ->get(),
-            'workflowTabs' => $this->workflowTabs,
-            'featureAccess' => $this->featureAccess,
-            'advancedAccess' => $this->advancedAccess,
         ]));
     }
 
@@ -84,15 +57,9 @@ class PermissionController extends BaseMasterController
             'module_id' => ['required', 'exists:sys_modules,id'],
             'action_ids' => ['nullable', 'array'],
             'action_ids.*' => ['exists:sys_actions,id'],
-            'workflow_tabs' => ['nullable', 'array'],
-            'workflow_tabs.*' => ['string', 'max:120'],
-            'feature_access' => ['nullable', 'array'],
-            'feature_access.*' => ['string', 'max:120'],
-            'advanced_access' => ['nullable', 'array'],
-            'advanced_access.*' => ['string', 'max:120'],
         ]);
 
-        if (empty($data['action_ids']) && empty($data['workflow_tabs']) && empty($data['feature_access']) && empty($data['advanced_access'])) {
+        if (empty($data['action_ids'])) {
             return back()
                 ->withInput()
                 ->withErrors(['action_ids' => 'Pilih minimal satu permission untuk dibuat.']);
@@ -106,19 +73,15 @@ class PermissionController extends BaseMasterController
         $created = 0;
 
         foreach ($actions as $action) {
-            $slug = $module->slug.'.'.$action->slug;
+            $permissionResource = $this->permissionResourceSlug($module->slug);
+            $slug = $permissionResource.'.'.$action->slug;
             $created += $this->createOrUpdatePermission($slug, [
                 'module_id' => $module->id,
                 'action_id' => $action->id,
                 'module' => $module->slug,
                 'permission_name' => Str::headline($module->name.' '.$action->name),
-                'permission_type' => SysPermission::TYPE_GLOBAL_ACTION,
             ]);
         }
-
-        $created += $this->generateCustomPermissions($module, $data['workflow_tabs'] ?? [], $this->workflowTabs[$module->slug] ?? [], 'tab', SysPermission::TYPE_WORKFLOW_ACCESS);
-        $created += $this->generateCustomPermissions($module, $data['feature_access'] ?? [], $this->featureAccess[$module->slug] ?? [], null, SysPermission::TYPE_FEATURE_ACCESS);
-        $created += $this->generateCustomPermissions($module, $data['advanced_access'] ?? [], $this->advancedAccess[$module->slug] ?? [], null, SysPermission::TYPE_ADVANCED_ACCESS);
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
@@ -126,29 +89,9 @@ class PermissionController extends BaseMasterController
             ->with('status', $created.' permission baru dibuat. Permission existing diperbarui otomatis.');
     }
 
-    private function permissionTypeForAction(string $actionSlug): string
+    private function permissionResourceSlug(string $moduleSlug): string
     {
-        return in_array($actionSlug, $this->globalActions, true)
-            ? SysPermission::TYPE_GLOBAL_ACTION
-            : SysPermission::TYPE_FEATURE_ACCESS;
-    }
-
-    private function generateCustomPermissions(SysModule $module, array $requested, array $catalog, ?string $namespace, string $type): int
-    {
-        $created = 0;
-
-        foreach (array_intersect($requested, array_keys($catalog)) as $key) {
-            $slug = $namespace ? $module->slug.'.'.$namespace.'.'.$key : $module->slug.'.'.$key;
-            $created += $this->createOrUpdatePermission($slug, [
-                'module_id' => $module->id,
-                'action_id' => null,
-                'module' => $module->slug,
-                'permission_name' => $catalog[$key],
-                'permission_type' => $type,
-            ]);
-        }
-
-        return $created;
+        return $moduleSlug === 'ticket' ? 'tickets' : $moduleSlug;
     }
 
     private function createOrUpdatePermission(string $slug, array $attributes): int

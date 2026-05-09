@@ -11,6 +11,7 @@ use App\Models\Master\SysModule;
 use App\Models\Master\SysPermission;
 use App\Models\Master\SysRole;
 use App\Models\Master\SysUser;
+use App\Models\HelpCategory;
 use App\Models\Setting;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Schema;
@@ -19,7 +20,7 @@ use Spatie\Permission\PermissionRegistrar;
 
 class MasterDataSeeder extends Seeder
 {
-    private array $globalActions = ['view', 'create', 'update', 'delete', 'approve', 'reject', 'export', 'print', 'upload'];
+    private array $globalActions = ['view', 'create', 'update', 'edit', 'delete', 'approve', 'reject', 'assign', 'export', 'print', 'upload', 'publish', 'manage'];
 
     public function run(): void
     {
@@ -68,6 +69,7 @@ class MasterDataSeeder extends Seeder
                 ['Roles', 'roles', 'bi-shield-check', 20],
                 ['Permissions', 'permissions', 'bi-key', 30],
                 ['Ticket', 'ticket', 'bi-ticket-detailed', 50],
+                ['Help Center', 'help', 'bi-life-preserver', 60],
                 ['Role Permissions', 'role-permissions', 'bi-diagram-2', 70],
                 ['Settings', 'settings', 'bi-gear', 80],
             ] as [$name, $slug, $icon, $sortNo]) {
@@ -85,6 +87,7 @@ class MasterDataSeeder extends Seeder
             'permissions' => ['view', 'create', 'update', 'delete', 'manage'],
             'role-permissions' => ['manage'],
             'tickets' => ['view', 'create', 'update', 'delete', 'assign', 'approve'],
+            'help' => ['view', 'create', 'edit', 'delete', 'publish'],
             'settings' => ['view', 'update'],
         ];
 
@@ -103,7 +106,6 @@ class MasterDataSeeder extends Seeder
                         'name' => $slug,
                         'permission_name' => Str::headline($slug),
                         'permission_slug' => $slug,
-                        'permission_type' => $this->permissionTypeForAction($action, $slug),
                         'guard_name' => 'web',
                         'description' => Str::headline($slug),
                     ]
@@ -111,34 +113,11 @@ class MasterDataSeeder extends Seeder
             }
         }
 
-        foreach ([
-            'my_request' => 'My Request',
-            'need_assignment' => 'Need Assignment',
-            'assign_to_me' => 'Assign To Me',
-            'overdue' => 'Overdue',
-            'closed' => 'Closed',
-            'all' => 'All Tickets',
-        ] as $tab => $label) {
-            $slug = 'ticket.tab.'.$tab;
-            $restoreOrCreate(SysPermission::class,
-                ['code' => $slug],
-                [
-                    'module_id' => $moduleRecords->get('ticket')?->id,
-                    'action_id' => $actionRecords->get($tab)?->id,
-                    'module' => 'ticket',
-                    'name' => $slug,
-                    'permission_name' => 'Ticket Tab '.$label,
-                    'permission_slug' => $slug,
-                    'permission_type' => SysPermission::TYPE_WORKFLOW_ACCESS,
-                    'guard_name' => 'web',
-                    'description' => 'Access ticket workflow tab: '.$label,
-                ]
-            );
-        }
-
         $superAdmin->permissions()->sync(SysPermission::pluck('id')->all());
-        $admin->permissions()->sync(SysPermission::whereIn('module', ['users', 'tickets', 'ticket', 'settings'])->pluck('id')->all());
+        $admin->permissions()->sync(SysPermission::whereIn('module', ['users', 'tickets', 'ticket', 'help', 'settings'])->pluck('id')->all());
         $adminUser->assignRole($superAdmin);
+
+        $this->seedHelpCategories($restoreOrCreate);
 
         foreach (['low' => [120, 2880], 'medium' => [60, 1440], 'high' => [30, 480], 'critical' => [15, 240]] as $priority => [$response, $resolve]) {
             $restoreOrCreate(RefTicketSla::class,
@@ -163,20 +142,39 @@ class MasterDataSeeder extends Seeder
         }
     }
 
-    private function permissionTypeForAction(string $action, string $slug): string
+    private function seedHelpCategories(callable $restoreOrCreate): void
     {
-        if (in_array($action, $this->globalActions, true)) {
-            return SysPermission::TYPE_GLOBAL_ACTION;
+        if (! class_exists(HelpCategory::class) || ! Schema::hasTable('help_categories')) {
+            return;
         }
 
-        if (Str::contains($slug, ['.tab.', '.workflow.']) || in_array($action, ['my_request', 'need_assignment', 'assign_to_me', 'overdue', 'closed'], true)) {
-            return SysPermission::TYPE_WORKFLOW_ACCESS;
-        }
+        $categories = [
+            'USER_GUIDE' => ['Getting Started', 'Dashboard', 'Ticket Management', 'Notifications', 'Settings'],
+            'DEVELOPER_DOCS' => ['Installation', 'Configuration', 'Environment Setup', 'Queue', 'Storage', 'API Documentation', 'Deployment'],
+            'FAQ' => ['General Questions', 'Account', 'Ticketing', 'Troubleshooting'],
+            'TROUBLESHOOTING' => ['Login Issue', 'Upload Error', 'Notification Problem', 'Permission Error'],
+        ];
 
-        if (Str::contains($slug, ['analytics', 'sla', 'monitor', 'adjust', 'manage'])) {
-            return SysPermission::TYPE_ADVANCED_ACCESS;
+        $sort = 10;
+        foreach ($categories as $type => $names) {
+            foreach ($names as $name) {
+                $restoreOrCreate(HelpCategory::class,
+                    ['slug' => Str::slug($type.' '.$name)],
+                    [
+                        'name' => $name,
+                        'type' => $type,
+                        'icon' => match ($type) {
+                            'DEVELOPER_DOCS' => 'bi-code-square',
+                            'FAQ' => 'bi-question-circle',
+                            'TROUBLESHOOTING' => 'bi-tools',
+                            default => 'bi-book',
+                        },
+                        'sort_no' => $sort,
+                        'is_active' => true,
+                    ]
+                );
+                $sort += 10;
+            }
         }
-
-        return SysPermission::TYPE_FEATURE_ACCESS;
     }
 }

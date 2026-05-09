@@ -30,6 +30,7 @@ class SettingRequest extends FormRequest
             'value' => ['nullable', 'string'],
             'type' => ['nullable', 'string', 'max:50'],
             'description' => ['nullable', 'string'],
+            'asset_file' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,svg,ico', 'max:2048'],
         ];
     }
 }

@@ -10,15 +10,6 @@ use Illuminate\Support\Str;
 
 class TicketAccessService
 {
-    public const TAB_PERMISSIONS = [
-        'my_request' => 'ticket.tab.my_request',
-        'need_assignment' => 'ticket.tab.need_assignment',
-        'assign_to_me' => 'ticket.tab.assign_to_me',
-        'overdue' => 'ticket.tab.overdue',
-        'closed' => 'ticket.tab.closed',
-        'all' => 'ticket.tab.all',
-    ];
-
     public function tabsFor(SysUser $user): Collection
     {
         return collect([
@@ -35,9 +26,19 @@ class TicketAccessService
 
     public function canAccessTab(SysUser $user, string $tab): bool
     {
-        $permission = self::TAB_PERMISSIONS[$tab] ?? null;
+        if ($this->hasFullAccess($user)) {
+            return true;
+        }
 
-        return $permission !== null && $user->can($permission);
+        return match ($tab) {
+            'my_request' => $user->can('tickets.view'),
+            'need_assignment' => $user->can('tickets.assign'),
+            'assign_to_me' => $user->can('tickets.approve'),
+            'overdue' => $user->can('tickets.assign') || $user->can('tickets.update') || $user->can('tickets.approve'),
+            'closed' => $user->can('tickets.update') || $user->can('tickets.approve'),
+            'all' => false,
+            default => false,
+        };
     }
 
     public function canViewTicket(SysUser $user, Ticket $ticket): bool
@@ -62,6 +63,21 @@ class TicketAccessService
         }
 
         return false;
+    }
+
+    public function canChangeTicketStatus(SysUser $user, Ticket $ticket): bool
+    {
+        if ($this->hasFullAccess($user)) {
+            return true;
+        }
+
+        return $ticket->assigned_to === $user->id
+            && $this->roleTokens($user)->contains('picticket');
+    }
+
+    public function canManageTickets(SysUser $user): bool
+    {
+        return $this->hasFullAccess($user);
     }
 
     public function applyVisibleScope(Builder $query, SysUser $user): Builder
@@ -158,14 +174,13 @@ class TicketAccessService
 
     private function hasFullAccess(SysUser $user): bool
     {
-        return $user->can(self::TAB_PERMISSIONS['all'])
-            || $this->roleTokens($user)->intersect(['admin', 'admin_ticket', 'administrator', 'superadmin', 'super_admin'])->isNotEmpty();
+        return $this->roleTokens($user)->intersect(['admin', 'admin_ticket', 'administrator', 'superadmin', 'super_admin'])->isNotEmpty();
     }
 
     private function isPic(SysUser $user): bool
     {
-        return $user->can(self::TAB_PERMISSIONS['assign_to_me'])
-            || $this->roleTokens($user)->intersect(['pic', 'pic_ticket', 'ticket_pic'])->isNotEmpty();
+        return $user->can('tickets.assign')
+            || $this->roleTokens($user)->intersect(['pic', 'picticket', 'pic_ticket', 'ticket_pic'])->isNotEmpty();
     }
 
     private function isSupervisor(SysUser $user): bool

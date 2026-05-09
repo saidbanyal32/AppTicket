@@ -3,12 +3,20 @@
 return [
     'resources' => [
         'tickets' => [
-            'view' => ['ticket.tab.my_request', 'ticket.tab.need_assignment', 'ticket.tab.assign_to_me', 'ticket.tab.overdue', 'ticket.tab.closed', 'ticket.tab.all'],
-            'create' => ['tickets.create', 'ticket.tab.my_request'],
+            'view' => 'tickets.view',
+            'create' => 'tickets.create',
             'update' => 'tickets.update',
             'delete' => 'tickets.delete',
             'assign' => 'tickets.assign',
             'approve' => 'tickets.approve',
+        ],
+        'help' => [
+            'view' => 'help.view',
+            'create' => 'help.create',
+            'update' => 'help.edit',
+            'delete' => 'help.delete',
+            'publish' => 'help.publish',
+            'export' => 'help.view',
         ],
         'settings' => [
             'view' => 'settings.view',
@@ -24,7 +32,8 @@ return [
 
     'menu' => [
         'custom' => [
-            'tickets' => ['permission' => ['ticket.tab.my_request', 'ticket.tab.need_assignment', 'ticket.tab.assign_to_me', 'ticket.tab.overdue', 'ticket.tab.closed', 'ticket.tab.all']],
+            'tickets' => ['permission' => 'tickets.view'],
+            'help' => ['permission' => 'help.view'],
             'notifications' => ['permission' => null],
             'settings' => ['permission' => 'settings.view'],
         ],

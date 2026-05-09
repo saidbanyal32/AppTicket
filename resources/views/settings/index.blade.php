@@ -15,9 +15,22 @@
                 <thead><tr><th>Key</th><th>Value</th><th>Type</th><th>Description</th><th style="width:110px">Actions</th></tr></thead>
                 <tbody>
                     @foreach ($settings as $setting)
+                        @php
+                            $isAsset = filled($setting->value) && str_starts_with($setting->value, 'company-assets/');
+                            $assetUrl = $isAsset ? \Illuminate\Support\Facades\Storage::disk('public')->url($setting->value) : null;
+                        @endphp
                         <tr>
                             <td class="fw-semibold">{{ $setting->key }}</td>
-                            <td>{{ \Illuminate\Support\Str::limit($setting->value, 70) }}</td>
+                            <td>
+                                @if ($assetUrl)
+                                    <div class="d-flex align-items-center gap-2">
+                                        <img src="{{ $assetUrl }}" alt="{{ $setting->key }}" class="rounded object-fit-contain border bg-white" style="width: 42px; height: 32px;">
+                                        <span>{{ \Illuminate\Support\Str::limit($setting->value, 50) }}</span>
+                                    </div>
+                                @else
+                                    {{ \Illuminate\Support\Str::limit($setting->value, 70) }}
+                                @endif
+                            </td>
                             <td>{{ $setting->type ?? '-' }}</td>
                             <td>{{ $setting->description ?? '-' }}</td>
                             <td>

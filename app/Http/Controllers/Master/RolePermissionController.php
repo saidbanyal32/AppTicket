@@ -15,7 +15,7 @@ class RolePermissionController extends BaseMasterController
 {
     protected string $resourceKey = 'role-permissions';
 
-    private array $globalActionSlugs = ['view', 'create', 'update', 'delete', 'approve', 'reject', 'export', 'print'];
+    private array $globalActionSlugs = ['view', 'create', 'update', 'delete', 'approve', 'reject', 'assign', 'export', 'print', 'upload', 'manage'];
 
     public function index(): View
     {
@@ -39,14 +39,9 @@ class RolePermissionController extends BaseMasterController
             ->orderBy('name')
             ->get();
         $globalPermissions = SysPermission::query()
-            ->where('permission_type', SysPermission::TYPE_GLOBAL_ACTION)
+            ->whereIn('action_id', $globalActions->pluck('id'))
             ->get()
             ->keyBy(fn (SysPermission $permission) => $permission->module_id.'|'.$permission->action_id);
-        $sectionLabels = [
-            SysPermission::TYPE_WORKFLOW_ACCESS => 'Workflow Access',
-            SysPermission::TYPE_FEATURE_ACCESS => 'Feature Access',
-            SysPermission::TYPE_ADVANCED_ACCESS => 'Advanced Access',
-        ];
 
         return view('access.role-permissions.matrix', $this->viewData([
             'roles' => $roles,
@@ -54,7 +49,6 @@ class RolePermissionController extends BaseMasterController
             'modules' => $modules,
             'matrixActions' => $globalActions,
             'permissions' => $globalPermissions,
-            'sectionLabels' => $sectionLabels,
             'selected' => $selected,
         ]));
     }

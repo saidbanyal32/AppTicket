@@ -41,66 +41,6 @@
                     </div>
                 </x-erp.form-section>
 
-                <x-erp.form-section title="Workflow Tabs">
-                    <div class="col-span">
-                        @foreach ($workflowTabs as $moduleSlug => $tabs)
-                            <div class="erp-action-checkgrid js-permission-catalog" data-module-scope="{{ $moduleSlug }}">
-                                @foreach ($tabs as $key => $label)
-                                    <label class="erp-check-tile">
-                                        <input class="form-check-input" type="checkbox" name="workflow_tabs[]" value="{{ $key }}" @checked(in_array($key, old('workflow_tabs', []), true))>
-                                        <span>
-                                            <strong>{{ $label }}</strong>
-                                            <small>{{ $moduleSlug }}.tab.{{ $key }}</small>
-                                        </span>
-                                    </label>
-                                @endforeach
-                            </div>
-                        @endforeach
-                        <div class="text-muted js-permission-empty-scope">No workflow tabs available for this module.</div>
-                        @error('workflow_tabs')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                    </div>
-                </x-erp.form-section>
-
-                <x-erp.form-section title="Feature Access">
-                    <div class="col-span">
-                        @foreach ($featureAccess as $moduleSlug => $features)
-                            <div class="erp-action-checkgrid js-permission-catalog" data-module-scope="{{ $moduleSlug }}">
-                                @foreach ($features as $key => $label)
-                                    <label class="erp-check-tile">
-                                        <input class="form-check-input" type="checkbox" name="feature_access[]" value="{{ $key }}" @checked(in_array($key, old('feature_access', []), true))>
-                                        <span>
-                                            <strong>{{ $label }}</strong>
-                                            <small>{{ $moduleSlug }}.{{ $key }}</small>
-                                        </span>
-                                    </label>
-                                @endforeach
-                            </div>
-                        @endforeach
-                        <div class="text-muted js-permission-empty-scope">No feature access available for this module.</div>
-                        @error('feature_access')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                    </div>
-                </x-erp.form-section>
-
-                <x-erp.form-section title="Advanced Access">
-                    <div class="col-span">
-                        @foreach ($advancedAccess as $moduleSlug => $items)
-                            <div class="erp-action-checkgrid js-permission-catalog" data-module-scope="{{ $moduleSlug }}">
-                                @foreach ($items as $key => $label)
-                                    <label class="erp-check-tile">
-                                        <input class="form-check-input" type="checkbox" name="advanced_access[]" value="{{ $key }}" @checked(in_array($key, old('advanced_access', []), true))>
-                                        <span>
-                                            <strong>{{ $label }}</strong>
-                                            <small>{{ $moduleSlug }}.{{ $key }}</small>
-                                        </span>
-                                    </label>
-                                @endforeach
-                            </div>
-                        @endforeach
-                        <div class="text-muted js-permission-empty-scope">No advanced access available for this module.</div>
-                        @error('advanced_access')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                    </div>
-                </x-erp.form-section>
-
                 <div class="d-flex justify-content-end gap-2 mt-3">
                     <a class="btn btn-sm btn-outline-secondary" href="{{ route('master.permissions.index') }}">Cancel</a>
                     <button class="btn btn-sm btn-primary" type="submit"><i class="bi bi-magic me-1"></i> Generate Permission</button>

@@ -3,8 +3,12 @@
 namespace App\Providers;
 
 use App\Models\AppNotification;
+use App\Models\HelpArticle;
+use App\Models\HelpCategory;
 use App\Models\Master\SysUser;
 use App\Models\Ticket;
+use App\Policies\HelpArticlePolicy;
+use App\Policies\HelpCategoryPolicy;
 use App\Policies\SysUserPolicy;
 use App\Policies\TicketPolicy;
 use App\Services\TicketService;
@@ -34,6 +38,8 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::policy(SysUser::class, SysUserPolicy::class);
         Gate::policy(Ticket::class, TicketPolicy::class);
+        Gate::policy(HelpArticle::class, HelpArticlePolicy::class);
+        Gate::policy(HelpCategory::class, HelpCategoryPolicy::class);
         Gate::define('manage-users-access', fn (SysUser $user) => $user->can('users.view') || $user->can('roles.view'));
 
         View::composer('partials.erp.topbar', function ($view) {

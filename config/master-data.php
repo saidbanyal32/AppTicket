@@ -205,8 +205,8 @@ return [
         'route' => 'master.permissions',
         'with' => ['module', 'action'],
         'display' => 'permission_slug',
-        'columns' => [['key' => 'module.name', 'label' => 'Module'], ['key' => 'action.name', 'label' => 'Action'], ['key' => 'permission_slug', 'label' => 'Permission Slug'], ['key' => 'permission_name', 'label' => 'Label'], ['key' => 'permission_type', 'label' => 'Type']],
-        'fields' => ['module_id' => ['type' => 'select', 'label' => 'Module', 'relation' => 'modules'], 'action_id' => ['type' => 'select', 'label' => 'Action', 'relation' => 'actions'], 'permission_name' => ['type' => 'text', 'label' => 'Label', 'span' => 2], 'permission_type' => ['type' => 'select', 'label' => 'Type', 'options' => ['global_action' => 'Global Action', 'feature_access' => 'Feature Access', 'workflow_tab' => 'Workflow Tab', 'advanced_access' => 'Advanced Access']]],
+        'columns' => [['key' => 'module.name', 'label' => 'Module'], ['key' => 'action.name', 'label' => 'Action'], ['key' => 'permission_slug', 'label' => 'Permission Slug'], ['key' => 'permission_name', 'label' => 'Label']],
+        'fields' => ['module_id' => ['type' => 'select', 'label' => 'Module', 'relation' => 'modules'], 'action_id' => ['type' => 'select', 'label' => 'Action', 'relation' => 'actions'], 'permission_name' => ['type' => 'text', 'label' => 'Label', 'span' => 2]],
         'rules' => ['module_id' => ['required', 'exists:sys_modules,id'], 'action_ids' => ['required', 'array'], 'action_ids.*' => ['exists:sys_actions,id']],
     ],
     'role-permissions' => [

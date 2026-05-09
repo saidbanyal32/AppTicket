@@ -215,9 +215,17 @@ class TicketController extends Controller
     {
         return array_merge([
             'categories' => RefTicketCategory::orderBy('name')->get(['id', 'name']),
-            'users' => SysUser::orderBy('name')->get(['id', 'name']),
+            'users' => $this->assignableUsers(),
             'jabatan' => RefJabatan::orderBy('name')->get(['id', 'name']),
         ], $data);
+    }
+
+    private function assignableUsers()
+    {
+        return SysUser::query()
+            ->whereHas('roles', fn (Builder $role) => $role->where('code', 'PICTICKET'))
+            ->orderBy('name')
+            ->get(['id', 'name']);
     }
 
     private function applyFilters(Builder $query, Request $request): void

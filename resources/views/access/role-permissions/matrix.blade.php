@@ -22,7 +22,7 @@
         <div class="erp-panel-header">
             <div>
                 <h2 class="erp-panel-title">Role Permission Matrix</h2>
-                <small class="text-muted">Global CRUD tetap ringkas, akses workflow dikelompokkan per module.</small>
+                <small class="text-muted">Kelola hak akses role menggunakan permission standar per module.</small>
             </div>
         </div>
         <div class="erp-panel-body">
@@ -42,7 +42,7 @@
                     <div class="erp-permission-toolbar">
                         <div>
                             <strong>{{ $selectedRole->name }}</strong>
-                            <small class="text-muted d-block">Pilih global action dan akses lanjutan sesuai scope role.</small>
+                            <small class="text-muted d-block">Pilih action yang boleh digunakan role ini.</small>
                         </div>
                         <button class="btn btn-sm btn-outline-secondary js-permission-select-all" type="button" data-target=".js-permission-check">
                             <i class="bi bi-check2-square me-1"></i>Select All
@@ -89,80 +89,6 @@
                                     @endforeach
                                 </tbody>
                             </table>
-                        </div>
-                    </div>
-
-                    <div class="erp-permission-block">
-                        <div class="erp-permission-block-head">
-                            <div>
-                                <strong>Feature & Workflow Access</strong>
-                                <small>Permission khusus module tidak menjadi kolom global.</small>
-                            </div>
-                        </div>
-
-                        <div class="accordion erp-permission-accordion" id="rolePermissionModules">
-                            @foreach ($modules as $module)
-                                @php
-                                    $advancedPermissions = $module->permissions
-                                        ->reject(fn ($permission) => ($permission->permission_type ?? 'feature_access') === \App\Models\Master\SysPermission::TYPE_GLOBAL_ACTION)
-                                        ->groupBy(fn ($permission) => $permission->permission_type ?? \App\Models\Master\SysPermission::TYPE_FEATURE_ACCESS);
-                                    $modulePermissionIds = $module->permissions->pluck('id')->map(fn ($id) => (string) $id)->all();
-                                    $moduleSelectedCount = collect($modulePermissionIds)->intersect($selected)->count();
-                                    $collapseId = 'module-permission-'.$module->id;
-                                @endphp
-
-                                <div class="accordion-item erp-permission-module-card">
-                                    <h2 class="accordion-header">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#{{ $collapseId }}" aria-expanded="false" aria-controls="{{ $collapseId }}">
-                                            <span>
-                                                <strong>{{ $module->name }}</strong>
-                                                <small>{{ $module->slug }}</small>
-                                            </span>
-                                            <span class="erp-module-permission-count" data-module-target=".js-module-{{ $module->id }}">
-                                                {{ $moduleSelectedCount }}/{{ count($modulePermissionIds) }}
-                                            </span>
-                                        </button>
-                                    </h2>
-                                    <div id="{{ $collapseId }}" class="accordion-collapse collapse" data-bs-parent="#rolePermissionModules">
-                                        <div class="accordion-body">
-                                            <div class="erp-module-permission-actions">
-                                                <button class="btn btn-sm btn-outline-secondary js-permission-select-all" type="button" data-target=".js-module-{{ $module->id }}">
-                                                    <i class="bi bi-check2-square me-1"></i>Select Module
-                                                </button>
-                                            </div>
-
-                                            @if ($advancedPermissions->isEmpty())
-                                                <div class="text-muted py-2">Tidak ada permission khusus untuk module ini.</div>
-                                            @endif
-
-                                            @foreach ($sectionLabels as $type => $label)
-                                                @php
-                                                    $sectionPermissions = $advancedPermissions->get($type, collect());
-                                                @endphp
-                                                @if ($sectionPermissions->isNotEmpty())
-                                                    <section class="erp-permission-section">
-                                                        <div class="erp-permission-section-head">
-                                                            <strong>{{ $label }}</strong>
-                                                            <button class="btn btn-sm btn-link js-permission-select-all" type="button" data-target=".js-section-{{ $module->id }}-{{ $type }}">Select section</button>
-                                                        </div>
-                                                        <div class="erp-permission-checkgrid">
-                                                            @foreach ($sectionPermissions as $permission)
-                                                                <label class="erp-permission-check">
-                                                                    <input class="form-check-input js-permission-check js-module-{{ $module->id }} js-section-{{ $module->id }}-{{ $type }}" data-module-target=".js-module-{{ $module->id }}" type="checkbox" name="permission_ids[]" value="{{ $permission->id }}" @checked(in_array((string) $permission->id, $selected, true))>
-                                                                    <span>
-                                                                        <strong>{{ $permission->permission_name ?: \Illuminate\Support\Str::headline($permission->permission_slug ?? $permission->name) }}</strong>
-                                                                        <small>{{ $permission->permission_slug ?? $permission->name }}</small>
-                                                                    </span>
-                                                                </label>
-                                                            @endforeach
-                                                        </div>
-                                                    </section>
-                                                @endif
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
                         </div>
                     </div>
 

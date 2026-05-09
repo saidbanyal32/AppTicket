@@ -14,24 +14,11 @@ class SysPermission extends SpatiePermission
 
     public const TYPE_GLOBAL_ACTION = 'global_action';
 
-    public const TYPE_FEATURE_ACCESS = 'feature_access';
-
-    public const TYPE_WORKFLOW_ACCESS = 'workflow_tab';
-
-    public const TYPE_ADVANCED_ACCESS = 'advanced_access';
-
     protected $table = 'sys_permissions';
 
     protected $guarded = ['id'];
 
     protected $guard_name = 'web';
-
-    protected function casts(): array
-    {
-        return [
-            'permission_type' => 'string',
-        ];
-    }
 
     public function roles(): BelongsToMany
     {

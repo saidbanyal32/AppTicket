@@ -10,7 +10,7 @@ class TicketPolicy
 {
     public function viewAny(SysUser $user): bool
     {
-        return app(TicketAccessService::class)->tabsFor($user)->isNotEmpty();
+        return $user->can('tickets.view');
     }
 
     public function view(SysUser $user, Ticket $ticket): bool
@@ -20,27 +20,26 @@ class TicketPolicy
 
     public function create(SysUser $user): bool
     {
-        return $user->can('tickets.create') || $user->can(TicketAccessService::TAB_PERMISSIONS['my_request']);
+        return app(TicketAccessService::class)->canManageTickets($user);
     }
 
     public function update(SysUser $user, Ticket $ticket): bool
     {
-        return $user->can('tickets.update') && app(TicketAccessService::class)->canViewTicket($user, $ticket);
+        return app(TicketAccessService::class)->canManageTickets($user);
     }
 
     public function delete(SysUser $user, Ticket $ticket): bool
     {
-        return $user->can('tickets.delete') && app(TicketAccessService::class)->canViewTicket($user, $ticket);
+        return app(TicketAccessService::class)->canManageTickets($user);
     }
 
     public function assign(SysUser $user, Ticket $ticket): bool
     {
-        return $user->can('tickets.assign') && app(TicketAccessService::class)->canViewTicket($user, $ticket);
+        return app(TicketAccessService::class)->canManageTickets($user);
     }
 
     public function changeStatus(SysUser $user, Ticket $ticket): bool
     {
-        return ($user->can('tickets.update') || $user->can('tickets.approve'))
-            && app(TicketAccessService::class)->canViewTicket($user, $ticket);
+        return app(TicketAccessService::class)->canChangeTicketStatus($user, $ticket);
     }
 }

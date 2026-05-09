@@ -32,6 +32,19 @@
                     'active' => request()->routeIs('tickets.*'),
                     'permission' => config('access.menu.custom.tickets.permission'),
                 ],
+                [
+                    'label' => 'Help Center',
+                    'icon' => 'bi-life-preserver',
+                    'url' => route('help.articles.index'),
+                    'active' => request()->routeIs('help.*'),
+                    'permission' => config('access.menu.custom.help.permission'),
+                    'children' => [
+                        ['label' => 'User Guide', 'url' => route('help.articles.index', ['article_type' => 'USER_GUIDE']), 'active' => request('article_type') === 'USER_GUIDE'],
+                        ['label' => 'Developer Docs', 'url' => route('help.articles.index', ['article_type' => 'DEVELOPER_DOCS']), 'active' => request('article_type') === 'DEVELOPER_DOCS'],
+                        ['label' => 'FAQ', 'url' => route('help.articles.index', ['article_type' => 'FAQ']), 'active' => request('article_type') === 'FAQ'],
+                        ['label' => 'Troubleshooting', 'url' => route('help.articles.index', ['article_type' => 'TROUBLESHOOTING']), 'active' => request('article_type') === 'TROUBLESHOOTING'],
+                    ],
+                ],
             ],
         ],
         [
@@ -98,10 +111,31 @@
                 <div class="erp-nav-section">{{ $section['title'] }}</div>
 
                 @foreach ($visibleCustom as $item)
-                    <a class="erp-nav-link {{ !empty($item['active']) ? 'active' : '' }}" href="{{ $item['url'] }}" title="{{ $item['label'] }}">
-                        <i class="bi {{ $item['icon'] }}"></i>
-                        <span class="erp-nav-label">{{ $item['label'] }}</span>
-                    </a>
+                    @if (! empty($item['children']))
+                        <a class="erp-nav-link {{ !empty($item['active']) ? 'active' : '' }}"
+                           data-bs-toggle="collapse"
+                           href="#erpCustomNav{{ $sectionIndex }}{{ $loop->index }}"
+                           role="button"
+                           aria-expanded="{{ !empty($item['active']) ? 'true' : 'false' }}"
+                           aria-controls="erpCustomNav{{ $sectionIndex }}{{ $loop->index }}"
+                           title="{{ $item['label'] }}">
+                            <i class="bi {{ $item['icon'] }}"></i>
+                            <span class="erp-nav-label">{{ $item['label'] }}</span>
+                            <i class="bi {{ !empty($item['active']) ? 'bi-chevron-down' : 'bi-chevron-right' }} erp-nav-chevron"></i>
+                        </a>
+                        <div class="collapse {{ !empty($item['active']) ? 'show' : '' }}" id="erpCustomNav{{ $sectionIndex }}{{ $loop->index }}">
+                            <div class="erp-subnav">
+                                @foreach ($item['children'] as $child)
+                                    <a class="{{ !empty($child['active']) ? 'active' : '' }}" href="{{ $child['url'] }}">{{ $child['label'] }}</a>
+                                @endforeach
+                            </div>
+                        </div>
+                    @else
+                        <a class="erp-nav-link {{ !empty($item['active']) ? 'active' : '' }}" href="{{ $item['url'] }}" title="{{ $item['label'] }}">
+                            <i class="bi {{ $item['icon'] }}"></i>
+                            <span class="erp-nav-label">{{ $item['label'] }}</span>
+                        </a>
+                    @endif
                 @endforeach
 
                 @foreach ($visibleGroups as $group)

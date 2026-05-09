@@ -241,6 +241,48 @@ $(function () {
         width: "100%",
     });
 
+    $(".erp-help-editor").each(function () {
+        const $wrap = $(this);
+        const $editor = $wrap.find(".js-help-editor");
+        const $input = $wrap.find(".js-help-editor-input");
+        const sync = () => $input.val($editor.html());
+
+        $wrap.find("[data-help-command]").on("click", function () {
+            const command = $(this).data("help-command");
+            let value = $(this).data("help-value") || null;
+
+            $editor.trigger("focus");
+
+            if (command === "createLink") {
+                value = window.prompt("URL");
+                if (!value) return;
+            }
+
+            if (command === "insertImage") {
+                value = window.prompt("Image URL");
+                if (!value) return;
+            }
+
+            if (command === "insertTable") {
+                document.execCommand("insertHTML", false, "<table><thead><tr><th>Column</th><th>Column</th></tr></thead><tbody><tr><td>Value</td><td>Value</td></tr></tbody></table>");
+                sync();
+                return;
+            }
+
+            if (command === "insertCode") {
+                document.execCommand("insertHTML", false, "<pre><code>// code</code></pre><p><br></p>");
+                sync();
+                return;
+            }
+
+            document.execCommand(command, false, value);
+            sync();
+        });
+
+        $editor.on("input blur paste keyup", sync);
+        $wrap.closest("form").on("submit", sync);
+    });
+
     $(".js-sidebar-toggle").on("click", function () {
         setSidebarState(!document.body.classList.contains("erp-sidebar-open"));
     });
@@ -262,6 +304,21 @@ $(function () {
         $button.prop("disabled", true);
         $button.find(".js-submit-label").addClass("d-none");
         $button.find(".js-submit-loading").removeClass("d-none");
+    });
+
+    $(".js-profile-avatar-input").on("change", function () {
+        const file = this.files?.[0];
+
+        if (!file) {
+            return;
+        }
+
+        const previewUrl = window.URL.createObjectURL(file);
+
+        $(".js-profile-avatar-preview")
+            .attr("src", previewUrl)
+            .removeClass("d-none");
+        $(".js-profile-avatar-fallback").addClass("d-none");
     });
 
     $(".js-role-permission-form").on("click", ".js-permission-select-all", function () {
@@ -287,35 +344,6 @@ $(function () {
 
         $form.find(`.erp-module-permission-count[data-module-target="${target}"]`).text(`${checked}/${total}`);
     });
-
-    const syncPermissionCatalogs = () => {
-        const $module = $(".js-permission-module");
-
-        if (!$module.length) {
-            return;
-        }
-
-        const slug = $module.find(":selected").data("module-slug") || "";
-
-        $(".js-permission-catalog").each(function () {
-            const $catalog = $(this);
-            const visible = $catalog.data("module-scope") === slug;
-
-            $catalog.toggleClass("d-none", !visible);
-
-            if (!visible) {
-                $catalog.find(":checkbox").prop("checked", false);
-            }
-        });
-
-        $(".js-permission-empty-scope").each(function () {
-            const hasVisibleCatalog = $(this).siblings(".js-permission-catalog").not(".d-none").length > 0;
-            $(this).toggleClass("d-none", hasVisibleCatalog);
-        });
-    };
-
-    $(".js-permission-module").on("change", syncPermissionCatalogs);
-    syncPermissionCatalogs();
 
     $(".erp-nav .collapse")
         .on("show.bs.collapse", function () {

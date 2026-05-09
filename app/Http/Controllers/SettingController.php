@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\SettingRequest;
 use App\Models\Setting;
 use App\Services\UiAuthorizationService;
+use Illuminate\Support\Facades\Storage;
 
 class SettingController extends Controller
 {
@@ -42,7 +43,7 @@ class SettingController extends Controller
     {
         $this->access->authorizeResource('settings', 'create');
 
-        $setting = Setting::create($request->validated());
+        $setting = Setting::create($this->settingData($request));
 
         return redirect()->route('settings.edit', $setting)->with('status', 'Setting berhasil dibuat.');
     }
@@ -74,7 +75,7 @@ class SettingController extends Controller
     {
         $this->access->authorizeResource('settings', 'update');
 
-        $setting->update($request->validated());
+        $setting->update($this->settingData($request, $setting));
 
         return redirect()->route('settings.edit', $setting)->with('status', 'Setting berhasil diperbarui.');
     }
@@ -85,6 +86,10 @@ class SettingController extends Controller
     public function destroy(Setting $setting)
     {
         $this->access->authorizeResource('settings', 'delete');
+
+        if ($setting->value && str_starts_with($setting->value, 'company-assets/')) {
+            Storage::disk('public')->delete($setting->value);
+        }
 
         $setting->delete();
 
@@ -100,5 +105,22 @@ class SettingController extends Controller
             'setting' => $setting,
             'mode' => $mode,
         ];
+    }
+
+    private function settingData(SettingRequest $request, ?Setting $setting = null): array
+    {
+        $data = $request->validated();
+        unset($data['asset_file']);
+
+        if ($request->hasFile('asset_file')) {
+            if ($setting?->value && str_starts_with($setting->value, 'company-assets/')) {
+                Storage::disk('public')->delete($setting->value);
+            }
+
+            $data['value'] = $request->file('asset_file')->store('company-assets', 'public');
+            $data['type'] = ($data['type'] ?? null) ?: 'company_asset';
+        }
+
+        return $data;
     }
 }

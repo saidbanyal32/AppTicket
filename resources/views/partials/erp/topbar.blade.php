@@ -40,11 +40,27 @@
             <i class="bi bi-question-circle"></i>
         </button>
         <div class="dropdown">
-            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
-                <i class="bi bi-person-circle me-1"></i> {{ auth()->user()?->name ?? 'User' }}
+            @php
+                $topbarUser = auth()->user();
+                $topbarPhoto = $topbarUser?->photo ? \Illuminate\Support\Facades\Storage::disk('public')->url($topbarUser->photo) : null;
+            @endphp
+            <button class="btn btn-sm btn-outline-secondary erp-account-toggle" type="button" data-bs-toggle="dropdown">
+                @if ($topbarPhoto)
+                    <img src="{{ $topbarPhoto }}" alt="{{ $topbarUser?->name }}" class="erp-account-avatar">
+                @else
+                    <span class="erp-account-avatar erp-account-avatar-fallback">{{ \Illuminate\Support\Str::of($topbarUser?->name ?? 'U')->substr(0, 1)->upper() }}</span>
+                @endif
+                <span class="erp-account-name">{{ $topbarUser?->name ?? 'User' }}</span>
             </button>
-            <div class="dropdown-menu dropdown-menu-end">
-                <span class="dropdown-item-text small text-muted">{{ auth()->user()?->email }}</span>
+            <div class="dropdown-menu dropdown-menu-end erp-account-menu">
+                <span class="dropdown-item-text small">
+                    <span class="d-block fw-semibold text-dark">{{ $topbarUser?->name ?? 'User' }}</span>
+                    <span class="text-muted">{{ $topbarUser?->email }}</span>
+                </span>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="{{ route('profile.show') }}"><i class="bi bi-person me-1"></i> My Profile</a>
+                <a class="dropdown-item" href="{{ route('profile.show') }}#account-settings"><i class="bi bi-sliders me-1"></i> Account Settings</a>
+                <a class="dropdown-item" href="{{ route('profile.show') }}#change-password"><i class="bi bi-key me-1"></i> Change Password</a>
                 <div class="dropdown-divider"></div>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf

@@ -79,9 +79,10 @@
             </section>
 
             <section class="erp-panel">
-                <div class="erp-panel-header"><h2 class="erp-panel-title">Actions</h2></div>
-                <div class="erp-panel-body">
-                    @can('assign', $ticket)
+                @canany(['assign', 'changeStatus'], $ticket)
+                    <div class="erp-panel-header"><h2 class="erp-panel-title">Actions</h2></div>
+                    <div class="erp-panel-body">
+                        @can('assign', $ticket)
                         <form method="POST" action="{{ route('tickets.assign', $ticket) }}" class="mb-2">
                             @csrf
                             <label class="form-label">Assign To</label>
@@ -91,9 +92,9 @@
                             <input class="form-control mb-2" name="note" placeholder="Assignment note">
                             <button class="btn btn-sm btn-outline-primary w-100" type="submit"><i class="bi bi-person-check me-1"></i>Assign</button>
                         </form>
-                    @endcan
+                        @endcan
 
-                    @can('changeStatus', $ticket)
+                        @can('changeStatus', $ticket)
                         <form method="POST" action="{{ route('tickets.status', $ticket) }}">
                             @csrf
                             <label class="form-label">Change Status</label>
@@ -103,14 +104,9 @@
                             <input class="form-control mb-2" name="note" placeholder="Status note">
                             <button class="btn btn-sm btn-outline-primary w-100" type="submit"><i class="bi bi-arrow-repeat me-1"></i>Update Status</button>
                         </form>
-                    @endcan
-
-                    @cannot('assign', $ticket)
-                        @cannot('changeStatus', $ticket)
-                            <div class="text-muted">No available actions.</div>
-                        @endcannot
-                    @endcannot
-                </div>
+                        @endcan
+                    </div>
+                @endcanany
             </section>
 
             <section class="erp-panel">

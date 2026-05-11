@@ -49,12 +49,25 @@
                                             ? collect(old($name, data_get($record, $field['relation'])?->pluck('id')->all() ?? []))->map(fn ($item) => (string) $item)->all()
                                             : [(string) $value];
                                     @endphp
-                                    <select class="form-select js-select2 @error($name) is-invalid @enderror" id="{{ $inputId }}" name="{{ $type === 'multi_select' ? $name.'[]' : $name }}" @if ($type === 'multi_select') multiple @endif>
+                                    <select
+                                        class="form-select js-select2 @error($name) is-invalid @enderror"
+                                        id="{{ $inputId }}"
+                                        name="{{ $type === 'multi_select' ? $name.'[]' : $name }}"
+                                        @if ($type === 'multi_select') multiple @endif
+                                        @if (! empty($field['depends_on'])) data-depends-on="{{ $field['depends_on'] }}" @endif
+                                        @if (! empty($field['depends_on_attribute'])) data-depends-on-attribute="{{ $field['depends_on_attribute'] }}" @endif
+                                    >
                                         @if ($field['nullable'] ?? false)
                                             <option value="">- None -</option>
                                         @endif
                                         @foreach ($options[$field['relation']] ?? [] as $option)
-                                            <option value="{{ $option['id'] }}" @selected(in_array((string) $option['id'], $selectedValues, true))>{{ $option['label'] }}</option>
+                                            <option
+                                                value="{{ $option['id'] }}"
+                                                @foreach ($option['attributes'] ?? [] as $attribute => $attributeValue)
+                                                    data-{{ $attribute }}="{{ $attributeValue }}"
+                                                @endforeach
+                                                @selected(in_array((string) $option['id'], $selectedValues, true))
+                                            >{{ $option['label'] }}</option>
                                         @endforeach
                                     </select>
                                 @elseif ($type === 'select_static')

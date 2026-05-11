@@ -1525,6 +1525,12 @@ textarea.form-control {
     margin-bottom: 22px;
 }
 
+.erp-auth-logo {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+}
+
 .erp-auth-brand strong,
 .erp-auth-brand small {
     display: block;

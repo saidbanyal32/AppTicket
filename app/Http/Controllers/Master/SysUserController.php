@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Master;
 
 use App\Http\Requests\Master\MasterDataRequest;
+use App\Models\Master\RefJabatan;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class SysUserController extends BaseMasterController
 {
@@ -16,6 +19,7 @@ class SysUserController extends BaseMasterController
         $this->authorizeMasterAction('create');
 
         $data = $this->validatedData($request);
+        $this->assertJabatanMatchesUnit($data);
         $roleIds = $data['role_ids'] ?? [];
         unset($data['role_ids']);
 
@@ -34,6 +38,7 @@ class SysUserController extends BaseMasterController
 
         $record = $this->findRecord($record);
         $data = $this->validatedData($request, $record);
+        $this->assertJabatanMatchesUnit($data);
         $roleIds = $data['role_ids'] ?? [];
         unset($data['role_ids']);
 
@@ -55,5 +60,40 @@ class SysUserController extends BaseMasterController
         $record->forceFill(['password' => Hash::make($temporaryPassword)])->save();
 
         return back()->with('status', 'Password sementara: '.$temporaryPassword);
+    }
+
+    protected function selectOptions(?Model $current = null): array
+    {
+        $options = parent::selectOptions($current);
+
+        $options['jabatan'] = RefJabatan::query()
+            ->orderBy('name')
+            ->get(['id', 'name', 'unit_id'])
+            ->map(fn (RefJabatan $jabatan) => [
+                'id' => $jabatan->id,
+                'label' => $jabatan->name,
+                'attributes' => ['unit-id' => $jabatan->unit_id],
+            ])
+            ->all();
+
+        return $options;
+    }
+
+    private function assertJabatanMatchesUnit(array $data): void
+    {
+        if (empty($data['unit_id']) || empty($data['jabatan_id'])) {
+            return;
+        }
+
+        $matchesUnit = RefJabatan::query()
+            ->whereKey($data['jabatan_id'])
+            ->where('unit_id', $data['unit_id'])
+            ->exists();
+
+        if (! $matchesUnit) {
+            throw ValidationException::withMessages([
+                'jabatan_id' => 'Jabatan harus sesuai dengan unit yang dipilih.',
+            ]);
+        }
     }
 }

@@ -8,13 +8,21 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="erp-auth-body">
+    @php
+        $companyLogo = \App\Models\Setting::query()->where('key', 'company_logo')->value('value');
+        $companyLogoUrl = filled($companyLogo) ? \Illuminate\Support\Facades\Storage::disk('public')->url($companyLogo) : null;
+    @endphp
     <main class="erp-auth-shell">
         <section class="erp-auth-card">
             <div class="erp-auth-brand">
-                <span class="erp-logo-mark">ZE</span>
+                @if ($companyLogoUrl)
+                    <img class="erp-auth-logo" src="{{ $companyLogoUrl }}" alt="{{ config('app.name', 'Company') }} logo">
+                @else
+                    <span class="erp-logo-mark">ZE</span>
+                @endif
                 <div>
                     <strong>SupportDesk Pro</strong>
-                    <small>Enterprise ERP Access</small>
+                    <small> 	Integrated Support & Ticketing Platform </small>
                 </div>
             </div>
 

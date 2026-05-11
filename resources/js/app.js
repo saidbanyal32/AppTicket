@@ -72,6 +72,50 @@ const getStoredSidebarState = () => {
     }
 };
 
+const initDependentSelects = () => {
+    $("select[data-depends-on]").each(function () {
+        const $target = $(this);
+        const dependencyName = $target.data("depends-on");
+        const optionAttribute = $target.data("depends-on-attribute");
+        const $form = $target.closest("form");
+        const $dependency = $form.find(`[name="${dependencyName}"]`);
+
+        if (!dependencyName || !optionAttribute || !$dependency.length) {
+            return;
+        }
+
+        const originalOptions = $target.find("option").clone();
+        const syncOptions = () => {
+            const dependencyValue = String($dependency.val() || "");
+            const currentValue = String($target.val() || "");
+            const $matchingOptions = originalOptions.filter(function () {
+                const $option = $(this);
+                const optionValue = String($option.val() || "");
+                const relatedValue = String($option.attr(`data-${optionAttribute}`) || "");
+
+                return optionValue === "" || relatedValue === dependencyValue;
+            });
+
+            $target.empty().append($matchingOptions.clone());
+
+            const hasCurrentValue = currentValue && $target.find("option").filter(function () {
+                return String($(this).val() || "") === currentValue;
+            }).length;
+
+            if (hasCurrentValue) {
+                $target.val(currentValue);
+            } else {
+                $target.val("");
+            }
+
+            $target.trigger("change.select2");
+        };
+
+        $dependency.on("change", syncOptions);
+        syncOptions();
+    });
+};
+
 window.ErpDataTable = {
     init(table) {
         const $table = $(table);
@@ -240,6 +284,8 @@ $(function () {
     $(".js-select2").select2({
         width: "100%",
     });
+
+    initDependentSelects();
 
     $(".erp-help-editor").each(function () {
         const $wrap = $(this);

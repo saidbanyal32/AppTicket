@@ -23,7 +23,7 @@
                         <label class="form-label">Category</label>
                         <select class="form-select js-select2 @error('category_id') is-invalid @enderror" name="category_id">
                             <option value="">- Select -</option>
-                            @foreach ($categories as $category)<option value="{{ $category->id }}" @selected((string) old('category_id', $ticket->category_id) === (string) $category->id)>{{ $category->name }}</option>@endforeach
+                            @foreach ($categories as $category)<option value="{{ $category['id'] }}" @selected((string) old('category_id', $ticket->category_id) === (string) $category['id'])>{{ $category['label'] }}</option>@endforeach
                         </select>
                         @error('category_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
@@ -38,13 +38,17 @@
                         <textarea class="form-control @error('description') is-invalid @enderror" name="description" rows="6">{{ old('description', $ticket->description) }}</textarea>
                         @error('description')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
-                    <div>
-                        <label class="form-label">Jabatan</label>
-                        <select class="form-select js-select2" name="jabatan_id">
-                            <option value="">- None -</option>
-                            @foreach ($jabatan as $item)<option value="{{ $item->id }}" @selected((string) old('jabatan_id', $ticket->jabatan_id) === (string) $item->id)>{{ $item->name }}</option>@endforeach
-                        </select>
-                    </div>
+                    @if ($isEdit)
+                        <div>
+                            <label class="form-label">Jabatan</label>
+                            <select class="form-select js-select2" name="jabatan_id">
+                                <option value="">- None -</option>
+                                @foreach ($jabatan as $item)<option value="{{ $item->id }}" @selected((string) old('jabatan_id', $ticket->jabatan_id) === (string) $item->id)>{{ $item->name }}</option>@endforeach
+                            </select>
+                        </div>
+                    @else
+                        <input type="hidden" name="jabatan_id" value="{{ auth()->user()?->jabatan_id }}">
+                    @endif
                     <div>
                         <label class="form-label">Attachment</label>
                         <input class="form-control @error('attachments.*') is-invalid @enderror" type="file" name="attachments[]" multiple>

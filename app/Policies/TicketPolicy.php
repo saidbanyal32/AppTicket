@@ -20,22 +20,26 @@ class TicketPolicy
 
     public function create(SysUser $user): bool
     {
-        return app(TicketAccessService::class)->canManageTickets($user);
+        return $user->can('tickets.create')
+            || app(TicketAccessService::class)->canManageTickets($user);
     }
 
     public function update(SysUser $user, Ticket $ticket): bool
     {
-        return app(TicketAccessService::class)->canManageTickets($user);
+        return $user->can('tickets.update')
+            || app(TicketAccessService::class)->canManageTickets($user);
     }
 
     public function delete(SysUser $user, Ticket $ticket): bool
     {
-        return app(TicketAccessService::class)->canManageTickets($user);
+        return $user->can('tickets.delete')
+            || app(TicketAccessService::class)->canManageTickets($user);
     }
 
     public function assign(SysUser $user, Ticket $ticket): bool
     {
-        return app(TicketAccessService::class)->canManageTickets($user);
+        return $user->can('tickets.assign')
+            || app(TicketAccessService::class)->canManageTickets($user);
     }
 
     public function changeStatus(SysUser $user, Ticket $ticket): bool

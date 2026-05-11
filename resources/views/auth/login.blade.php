@@ -5,7 +5,7 @@
 @section('content')
     <div class="erp-auth-heading">
         <h1>Sign in</h1>
-        <p>Use your ERP username or email to continue.</p>
+        <p>Use your Login username or email to continue.</p>
     </div>
 
     @if (session('status'))

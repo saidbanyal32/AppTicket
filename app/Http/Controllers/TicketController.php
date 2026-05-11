@@ -13,7 +13,9 @@ use App\Models\Ticket;
 use App\Services\TicketAccessService;
 use App\Services\TicketService;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 
@@ -108,7 +110,11 @@ class TicketController extends Controller
     {
         Gate::authorize('create', Ticket::class);
 
-        $ticket = $this->tickets->create($request->validated(), $request->file('attachments', []), $request);
+        $data = array_merge($request->validated(), [
+            'jabatan_id' => auth()->user()?->jabatan_id,
+        ]);
+
+        $ticket = $this->tickets->create($data, $request->file('attachments', []), $request);
 
         return redirect()->route('tickets.show', $ticket)->with('status', 'Ticket berhasil dibuat.');
     }
@@ -214,10 +220,41 @@ class TicketController extends Controller
     private function formOptions(array $data = []): array
     {
         return array_merge([
-            'categories' => RefTicketCategory::orderBy('name')->get(['id', 'name']),
+            'categories' => $this->categoryOptions(),
             'users' => $this->assignableUsers(),
             'jabatan' => RefJabatan::orderBy('name')->get(['id', 'name']),
         ], $data);
+    }
+
+    private function categoryOptions(): array
+    {
+        $categories = RefTicketCategory::query()
+            ->orderBy('sort_no')
+            ->orderBy('name')
+            ->get(['id', 'parent_id', 'name']);
+
+        $grouped = $categories->groupBy(fn (Model $category) => (string) ($category->parent_id ?? ''));
+
+        return $this->flattenCategoryOptions($grouped, '');
+    }
+
+    private function flattenCategoryOptions(Collection $grouped, string $parentId, int $depth = 0): array
+    {
+        $options = [];
+
+        foreach ($grouped->get($parentId, collect()) as $category) {
+            $options[] = [
+                'id' => $category->id,
+                'label' => ($depth > 0 ? str_repeat('- ', $depth) : '').$category->name,
+            ];
+
+            $options = array_merge(
+                $options,
+                $this->flattenCategoryOptions($grouped, (string) $category->id, $depth + 1)
+            );
+        }
+
+        return $options;
     }
 
     private function assignableUsers()

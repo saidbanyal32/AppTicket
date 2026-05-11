@@ -98,7 +98,7 @@ return [
         ],
         'fields' => [
             'unit_id' => ['type' => 'select', 'label' => 'Unit', 'relation' => 'units'],
-            'jabatan_id' => ['type' => 'select', 'label' => 'Jabatan', 'relation' => 'jabatan'],
+            'jabatan_id' => ['type' => 'select', 'label' => 'Jabatan', 'relation' => 'jabatan', 'depends_on' => 'unit_id', 'depends_on_attribute' => 'unit-id'],
             'employee_no' => ['type' => 'text', 'label' => 'Employee No'],
             'name' => ['type' => 'text', 'label' => 'Name', 'span' => 2],
             'email' => ['type' => 'email', 'label' => 'Email'],
